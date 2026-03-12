@@ -3,25 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HSA Dynamics - CRM Rifas v30</title>
+    <title>HSA Dynamics - CRM Rifas v31</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { background-color: #050505; color: #e2e8f0; font-family: 'Inter', sans-serif; min-height: 100vh; position: relative; }
-        body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://i.ibb.co/G3fNGKF7/duende.jpg'); background-size: cover; background-position: center; opacity: 0.12; z-index: -1; }
+        /* Imagen del duende aplicada al fondo */
+        body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://i.ibb.co/G3fNGKF7/duende.jpg'); background-size: cover; background-position: center; opacity: 0.15; z-index: -1; }
+        
         #contenedorTabla { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 5px; padding: 12px; background-color: rgba(10, 10, 10, 0.9); border-radius: 15px; border: 1px solid #1a1a1a; width: 100%; }
         .numero-bola { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: all 0.2s ease; font-size: 0.75rem; font-weight: 900; user-select: none; border: 1px solid #1a1a1a; color: #ffffff; position: relative; overflow: hidden; background-size: cover; background-position: center; }
         .numero-bola:active { transform: scale(0.9); }
         .libre { background: linear-gradient(145deg, #064e3b, #022c22); border-color: #059669; } 
         .seleccionado { background: #3b82f6 !important; border-color: #ffffff; transform: scale(1.1); z-index: 10; box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
+        /* Imagen del duende en los números vendidos */
         .vendido { background-image: url('https://i.ibb.co/G3fNGKF7/duende.jpg'); color: transparent !important; border-color: #71ef44; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
+        
         #barraAccionFija { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 95%; max-width: 450px; }
         .glass { background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); }
         textarea, input, select { background-color: #111 !important; border: 1px solid #262626 !important; color: white !important; font-size: 12px !important; }
+        
+        /* Ventana flotante corregida */
         #tooltipGlobal { 
             position: fixed; display: none; background: rgba(15, 15, 15, 0.98); 
             color: white; padding: 15px; border-radius: 16px; z-index: 99999; 
-            pointer-events: none; width: 240px; border: 1px solid #444; 
+            pointer-events: none; width: 250px; border: 1px solid #444; 
             box-shadow: 0 20px 40px rgba(0,0,0,0.9); backdrop-filter: blur(12px);
         }
     </style>
@@ -108,8 +114,8 @@
                 <p id="pagoDeudaActual" class="text-2xl font-black text-rose-500">$0</p>
             </div>
             <div class="space-y-3">
-                <input type="number" id="nuevoAbonoInput" class="w-full p-3 rounded-xl text-xs" placeholder="$ Sumar nuevo abono">
-                <button onclick="procesarPagoParcial()" class="w-full bg-yellow-600 py-3 rounded-xl font-black text-white text-[10px] uppercase">➕ REGISTRAR ABONO</button>
+                <input type="number" id="nuevoAbonoInput" class="w-full p-3 rounded-xl text-xs" placeholder="$ Nuevo abono">
+                <button onclick="procesarPagoParcial()" class="w-full bg-yellow-600 py-3 rounded-xl font-black text-white text-[10px] uppercase">➕ SUMAR ABONO</button>
                 <button onclick="procesarPagoTotal()" class="w-full bg-emerald-600 py-3 rounded-xl font-black text-white text-[10px] uppercase">💰 PAGO COMPLETO</button>
                 <div class="grid grid-cols-2 gap-2">
                     <button onclick="confirmarLiberar()" class="py-3 bg-rose-900/20 text-rose-500 rounded-xl font-bold text-[9px] uppercase border border-rose-900/30">🗑️ LIBERAR</button>
@@ -160,7 +166,7 @@
             actualizarDashboard();
         }
 
-        // --- TOOLTIP DETALLADO (RESTAURADO) ---
+        // TOOLTIP TOTALMENTE CORREGIDO
         function mostrarTooltip(e, num) {
             const i = rifaDatos[num];
             if(!i) { ocultarTooltip(); return; }
@@ -168,21 +174,21 @@
             const totalVenta = i.numerosEnVenta.length * parseFloat(config.valor);
             const abonado = i.pago === 'total' ? totalVenta : i.abonoTotal;
             const deuda = totalVenta - abonado;
-            const colorEstado = i.pago === 'total' ? 'text-emerald-400' : 'text-rose-500';
+            const colorEstado = i.pago === 'total' ? 'color:#10b981;' : 'color:#f43f5e;';
             
             tooltip.style.display = 'block';
             tooltip.innerHTML = `
                 <div style="border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:8px;">
                     <div style="font-size:9px; color:#666; font-weight:bold; text-transform:uppercase;">Cliente</div>
-                    <div style="font-weight:900; font-size:14px; color:white;">${i.nombre}</div>
+                    <div style="font-weight:900; font-size:15px; color:white;">${i.nombre}</div>
                     <div style="font-size:10px; color:#10b981;">📱 WhatsApp: ${i.whatsapp}</div>
                 </div>
-                <div style="font-size:11px; line-height:1.6; color:#ccc;">
+                <div style="font-size:11px; line-height:1.7; color:#ccc;">
                     <div style="display:flex; justify-content:space-between;"><span>🔢 Tickets:</span><b style="color:white;">${i.numerosEnVenta.join(", ")}</b></div>
                     <div style="display:flex; justify-content:space-between;"><span>💰 Total:</span><b style="color:white;">$${totalVenta.toLocaleString()}</b></div>
                     <div style="display:flex; justify-content:space-between;"><span>✅ Abonado:</span><b style="color:#10b981;">$${abonado.toLocaleString()}</b></div>
                     <div style="display:flex; justify-content:space-between; border-top:1px solid #222; margin-top:5px; padding-top:5px;">
-                        <span>🚩 SALDO:</span><b class="${colorEstado}">$${deuda.toLocaleString()}</b>
+                        <span>🚩 DEBE:</span><b style="${colorEstado}">$${deuda.toLocaleString()}</b>
                     </div>
                 </div>
             `;
@@ -191,14 +197,14 @@
 
         function moverTooltip(e) {
             let x = e.clientX + 15; let y = e.clientY + 15;
-            if (x + 250 > window.innerWidth) x = e.clientX - 265;
-            if (y + 150 > window.innerHeight) y = e.clientY - 160;
+            if (x + 260 > window.innerWidth) x = e.clientX - 265;
+            if (y + 160 > window.innerHeight) y = e.clientY - 170;
             tooltip.style.left = x + 'px'; tooltip.style.top = y + 'px';
         }
 
         function ocultarTooltip() { tooltip.style.display = 'none'; }
 
-        // --- GESTIÓN DE PAGOS ---
+        // GESTIÓN DE PAGOS Y ACCIONES
         function abrirGestionPago(num) {
             numeroActivoParaPago = num;
             const i = rifaDatos[num];
@@ -207,7 +213,7 @@
             const deuda = totalVenta - abonado;
 
             document.getElementById('pagoTitulo').innerText = i.nombre;
-            document.getElementById('pagoSubtitulo').innerText = `Tickets: ${i.numerosEnVenta.join(", ")}`;
+            document.getElementById('pagoSubtitulo').innerText = `Boletas: ${i.numerosEnVenta.join(", ")}`;
             document.getElementById('pagoDeudaActual').innerText = `$${deuda.toLocaleString()}`;
             document.getElementById('modalPago').classList.remove('hidden');
             ocultarTooltip();
@@ -234,7 +240,7 @@
         }
 
         function confirmarLiberar() {
-            if(confirm("¿Liberar estos tickets?")) {
+            if(confirm("¿Eliminar registro y liberar estos tickets?")) {
                 const idV = rifaDatos[numeroActivoParaPago].idVenta;
                 Object.keys(rifaDatos).forEach(n => { if(rifaDatos[n].idVenta === idV) delete rifaDatos[n]; });
                 guardarLocal(); cerrarModalPago(); generarTabla();
@@ -243,7 +249,6 @@
 
         function cerrarModalPago() { document.getElementById('modalPago').classList.add('hidden'); }
 
-        // --- RESTO DE FUNCIONES ---
         function manejarSeleccion(num, el) {
             const idx = seleccionados.indexOf(num);
             if (idx > -1) { seleccionados.splice(idx, 1); el.classList.remove('seleccionado'); }
@@ -258,8 +263,9 @@
             const pag = document.getElementById('estadoPago').value;
             let abo = parseFloat(document.getElementById('montoAbonado').value) || 0;
             const ns = [...seleccionados];
+            const idV = Date.now();
             if(pag === 'total') abo = ns.length * config.valor;
-            ns.forEach(n => { rifaDatos[n] = { nombre: nom, whatsapp: tel || "S/N", pago: pag, abonoTotal: abo, numerosEnVenta: ns, idVenta: Date.now() }; });
+            ns.forEach(n => { rifaDatos[n] = { nombre: nom, whatsapp: tel || "S/N", pago: pag, abonoTotal: abo, numerosEnVenta: ns, idVenta: idV }; });
             guardarLocal();
             if(enviarWhatsApp && tel) enviarWS(nom, tel, pag, abo, ns);
             cerrarModal(); seleccionados = []; document.getElementById('countSeleccion').innerText = "0"; generarTabla();
@@ -328,7 +334,7 @@
             a.download = `Reporte_HSA.csv`; a.click();
         }
 
-        function resetearSistema() { if(confirm("⚠️ ¿BORRAR TODO?")) { rifaDatos = {}; localStorage.removeItem('rifa_onyx_v21'); generarTabla(); } }
+        function resetearSistema() { if(confirm("⚠️ ¿BORRAR TODO EL CRM?")) { rifaDatos = {}; localStorage.removeItem('rifa_onyx_v21'); generarTabla(); } }
 
         function compartirDisponibles() {
             const limite = parseInt(config.rango);
@@ -341,7 +347,7 @@
         }
 
         function enviarPendientesWhatsApp() {
-            let res = "*🚩 DEUDORES HSA:*%0A";
+            let res = "*🚩 DEUDORES HSA DYNAMICS:*%0A";
             let p = new Set();
             Object.keys(rifaDatos).forEach(n => {
                 const v = rifaDatos[n];
