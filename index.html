@@ -3,20 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HSA Dynamics - CRM Rifas v32</title>
+    <title>HSA Dynamics - Gestión de Rifas</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { background-color: #050505; color: #e2e8f0; font-family: 'Inter', sans-serif; min-height: 100vh; position: relative; }
-        body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://i.ibb.co/G3fNGKF7/duende.jpg'); background-size: cover; background-position: center; opacity: 0.15; z-index: -1; }
-        #contenedorTabla { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 5px; padding: 12px; background-color: rgba(10, 10, 10, 0.9); border-radius: 15px; border: 1px solid #1a1a1a; width: 100%; }
-        .numero-bola { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: all 0.2s ease; font-size: 0.75rem; font-weight: 900; user-select: none; border: 1px solid #1a1a1a; color: #ffffff; position: relative; overflow: hidden; background-size: cover; background-position: center; }
+        body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://i.ibb.co/HL9PDYfW/duende.jpg'); background-size: cover; background-position: center; opacity: 0.15; z-index: -1; }
+        
+        #contenedorTabla { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 5px; padding: 12px; background-color: #0a0a0a; border-radius: 15px; border: 1px solid #1a1a1a; width: 100%; }
+        
+        .numero-bola { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: all 0.2s ease; font-size: 0.75rem; font-weight: 900; user-select: none; border: 1px solid #1a1a1a; color: #ffffff; position: relative; overflow: hidden; text-align: center; }
         .libre { background: linear-gradient(145deg, #064e3b, #022c22); border-color: #059669; } 
         .seleccionado { background: #3b82f6 !important; border-color: #ffffff; transform: scale(1.1); z-index: 10; box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
-        .vendido { background-image: url('https://i.ibb.co/G3fNGKF7/duende.jpg'); color: transparent !important; border-color: #71ef44; box-shadow: inset 0 0 15px rgba(0,0,0,0.9); }
+        .vendido { border-color: #71ef44; color: transparent !important; }
+
         #barraAccionFija { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 95%; max-width: 450px; }
         .glass { background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); }
         textarea, input, select { background-color: #111 !important; border: 1px solid #262626 !important; color: white !important; font-size: 12px !important; }
+        
         #tooltipGlobal { position: fixed; display: none; background: rgba(10, 10, 10, 0.98); color: white; padding: 16px; border-radius: 20px; z-index: 99999; pointer-events: none; width: 260px; border: 1px solid #444; box-shadow: 0 25px 50px rgba(0,0,0,0.9); backdrop-filter: blur(15px); }
     </style>
 </head>
@@ -28,23 +33,23 @@
             <div class="flex justify-between items-center mb-4 border-b border-[#1a1a1a] pb-4">
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded-xl overflow-hidden border border-emerald-500">
-                        <img src="https://i.ibb.co/G3fNGKF7/duende.jpg" class="w-full h-full object-cover">
+                        <img src="https://i.ibb.co/HL9PDYfW/duende.jpg" class="w-full h-full object-cover">
                     </div>
                     <div>
                         <h1 class="text-lg font-black text-white leading-none">HSA <span class="text-emerald-500">DYNAMICS</span></h1>
-                        <span class="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">Control de Sorteos</span>
+                        <span class="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">Digital CRM</span>
                     </div>
                 </div>
                 <div class="flex gap-1 flex-wrap justify-end">
-                    <button onclick="compartirDisponibles()" class="p-2 bg-emerald-900/20 text-emerald-500 rounded-lg border border-emerald-800/30 text-[8px] font-bold uppercase">🟢 Libres</button>
+                    <button id="btnCompartir" onclick="compartirDisponibles()" class="p-2 bg-emerald-900/20 text-emerald-500 rounded-lg border border-emerald-800/30 text-[8px] font-bold uppercase">🟢 Libres</button>
                     <button onclick="enviarPendientesWhatsApp()" class="p-2 bg-rose-900/20 text-rose-500 rounded-lg border border-rose-800/30 text-[8px] font-bold uppercase">🔴 Deudores</button>
                     <button onclick="exportarExcel()" class="p-2 bg-zinc-800 text-zinc-300 rounded-lg border border-zinc-700 text-[8px] font-bold uppercase">📥 Excel</button>
                     <button onclick="resetearSistema()" class="p-2 bg-zinc-900 text-zinc-600 rounded-lg border border-zinc-800 text-[8px] font-bold uppercase">🗑️ Reset</button>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
-                <textarea id="confNombre" oninput="validarConfig()" rows="2" placeholder="Nombre del Premio..." class="col-span-2 w-full p-2 rounded-xl text-xs"></textarea>
-                <input type="number" id="confValor" oninput="validarConfig()" placeholder="$ Valor Ticket" class="p-2 rounded-lg text-xs">
+                <textarea id="confNombre" oninput="validarConfig()" rows="2" placeholder="Nombre del Sorteo..." class="col-span-2 w-full p-2 rounded-xl text-xs"></textarea>
+                <input type="number" id="confValor" oninput="validarConfig()" placeholder="$ Precio Ticket" class="p-2 rounded-lg text-xs">
                 <input type="date" id="confFecha" oninput="validarConfig()" class="p-2 rounded-lg text-xs">
                 <select id="rangoRifa" onchange="cambiarRango()" class="col-span-2 p-2 rounded-lg text-xs">
                     <option value="100">100 Números (00-99)</option>
@@ -57,10 +62,11 @@
             <div class="bg-black/70 p-2 rounded-xl border border-[#1a1a1a]"><p class="text-[8px] text-zinc-500 font-bold uppercase">Caja</p><p id="statRecaudado" class="font-black text-emerald-500 text-xs">$0</p></div>
             <div class="bg-black/70 p-2 rounded-xl border border-[#1a1a1a]"><p class="text-[8px] text-zinc-500 font-bold uppercase">Deuda</p><p id="statDeuda" class="font-black text-rose-500 text-xs">$0</p></div>
             <div class="bg-black/70 p-2 rounded-xl border border-[#1a1a1a]"><p class="text-[8px] text-zinc-500 font-bold uppercase">Venta</p><p id="statVendidos" class="font-black text-white text-xs">0</p></div>
-            <div class="bg-black/70 p-2 rounded-xl border border-[#1a1a1a]"><p class="text-[8px] text-zinc-500 font-bold uppercase">Progreso</p><p id="statProgreso" class="font-black text-blue-500 text-xs">0%</p></div>
+            <div class="bg-black/70 p-2 rounded-xl border border-[#1a1a1a]"><p class="text-[8px] text-zinc-500 font-bold uppercase">Lleno</p><p id="statProgreso" class="font-black text-blue-500 text-xs">0%</p></div>
         </div>
 
-        <input type="text" id="buscador" onkeyup="filtrarNumeros()" placeholder="🔍 Buscar por nombre o número..." class="w-full bg-black/80 border border-[#1a1a1a] p-3 rounded-xl text-xs text-white mb-4 outline-none">
+        <input type="text" id="buscador" onkeyup="filtrarNumeros()" placeholder="🔍 Buscar cliente o número..." class="w-full bg-black/80 border border-[#1a1a1a] p-3 rounded-xl text-xs text-white mb-4 outline-none">
+        
         <div id="contenedorTabla"></div>
     </div>
 
@@ -76,21 +82,18 @@
 
     <div id="modalRegistro" class="hidden fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 z-[10000]">
         <div class="bg-[#0a0a0a] p-6 rounded-3xl border border-white/10 w-full max-w-xs shadow-2xl">
-            <h2 class="text-sm font-black text-white uppercase text-center mb-4">Registro de Venta</h2>
+            <h2 class="text-sm font-black text-white uppercase text-center mb-4">Datos del Comprador</h2>
             <div class="space-y-3">
-                <div class="flex gap-2">
-                    <input type="text" id="nombreCliente" class="flex-1 p-3 rounded-xl text-xs" placeholder="Nombre">
-                    <button onclick="seleccionarContacto()" class="bg-emerald-600/20 text-emerald-500 border border-emerald-500/30 px-3 rounded-xl text-xs font-bold" title="Importar contacto">👤+</button>
-                </div>
-                <input type="tel" id="whatsappCliente" class="w-full p-3 rounded-xl text-xs" placeholder="WhatsApp (57...)">
+                <input type="text" id="nombreCliente" class="w-full p-3 rounded-xl text-xs" placeholder="Nombre completo">
+                <input type="tel" id="whatsappCliente" class="w-full p-3 rounded-xl text-xs" placeholder="WhatsApp (Ej: 573...)">
                 <select id="estadoPago" onchange="toggleAbono()" class="w-full p-3 rounded-xl text-xs font-bold">
                     <option value="total">PAGÓ TODO 🟢</option>
                     <option value="abono">ABONO PARCIAL 🟡</option>
-                    <option value="nada">DEBE TOTAL 🔴</option>
+                    <option value="nada">DEBE TODO 🔴</option>
                 </select>
-                <input type="number" id="montoAbonado" class="hidden w-full p-3 rounded-xl border border-yellow-700/50 text-yellow-500 font-bold text-center" placeholder="¿Cuánto abonó?">
-                <button onclick="guardarVenta(true)" class="w-full bg-emerald-600 py-3 rounded-xl font-black text-white text-[10px] uppercase">✅ GUARDAR Y ENVIAR</button>
-                <button onclick="guardarVenta(false)" class="w-full bg-zinc-800 py-3 rounded-xl font-black text-zinc-400 text-[10px] uppercase border border-white/5">💾 SOLO GUARDAR</button>
+                <input type="number" id="montoAbonado" class="hidden w-full p-3 rounded-xl border border-yellow-700/50 text-yellow-500 font-bold text-center" placeholder="Monto del abono">
+                <button onclick="guardarVenta(true)" class="w-full bg-emerald-600 py-3 rounded-xl font-black text-white text-[10px] uppercase">✅ Guardar y Enviar</button>
+                <button onclick="guardarVenta(false)" class="w-full bg-zinc-800 py-3 rounded-xl font-black text-zinc-400 text-[10px] uppercase border border-white/5">💾 Solo Guardar</button>
                 <button onclick="cerrarModal()" class="w-full py-2 text-zinc-600 text-[9px] uppercase font-bold">CANCELAR</button>
             </div>
         </div>
@@ -98,16 +101,16 @@
 
     <div id="modalPago" class="hidden fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 z-[10001]">
         <div class="bg-[#0a0a0a] p-6 rounded-3xl border border-white/10 w-full max-w-xs shadow-2xl">
-            <h2 id="pagoTitulo" class="text-sm font-black text-white uppercase text-center mb-1">Nombre Cliente</h2>
+            <h2 id="pagoTitulo" class="text-sm font-black text-white uppercase text-center mb-1">Cargando...</h2>
             <p id="pagoSubtitulo" class="text-[10px] text-zinc-500 text-center mb-4 italic"></p>
             <div class="bg-zinc-900/50 p-4 rounded-2xl border border-white/5 mb-4 text-center">
-                <p class="text-[9px] text-zinc-500 uppercase font-bold">Saldo Pendiente</p>
+                <p class="text-[9px] text-zinc-500 uppercase font-bold">Resta pagar</p>
                 <p id="pagoDeudaActual" class="text-2xl font-black text-rose-500">$0</p>
             </div>
             <div class="space-y-3">
-                <input type="number" id="nuevoAbonoInput" class="w-full p-3 rounded-xl text-xs" placeholder="$ Sumar nuevo abono">
+                <input type="number" id="nuevoAbonoInput" class="w-full p-3 rounded-xl text-xs" placeholder="Sumar abono...">
                 <button onclick="procesarPagoParcial()" class="w-full bg-yellow-600 py-3 rounded-xl font-black text-white text-[10px] uppercase">➕ REGISTRAR ABONO</button>
-                <button onclick="procesarPagoTotal()" class="w-full bg-emerald-600 py-3 rounded-xl font-black text-white text-[10px] uppercase">💰 PAGO COMPLETO</button>
+                <button onclick="procesarPagoTotal()" class="w-full bg-emerald-600 py-3 rounded-xl font-black text-white text-[10px] uppercase">💰 LIQUIDAR DEUDA</button>
                 <div class="grid grid-cols-2 gap-2">
                     <button onclick="confirmarLiberar()" class="py-3 bg-rose-900/20 text-rose-500 rounded-xl font-bold text-[9px] uppercase border border-rose-900/30">🗑️ LIBERAR</button>
                     <button onclick="cerrarModalPago()" class="py-3 bg-zinc-800 text-zinc-400 rounded-xl font-bold text-[9px] uppercase border border-white/5">CERRAR</button>
@@ -117,6 +120,7 @@
     </div>
 
     <script>
+        const URL_DUENDE = "https://images.weserv.nl/?url=i.ibb.co/HL9PDYfW/duende.jpg";
         let rifaDatos = JSON.parse(localStorage.getItem('rifa_onyx_v21')) || {};
         let config = JSON.parse(localStorage.getItem('rifa_conf_v21')) || {nombre:'', valor:'', fecha:'', rango: '100'};
         let seleccionados = [];
@@ -131,28 +135,6 @@
             generarTabla();
         }
 
-        async function seleccionarContacto() {
-            const props = ['name', 'tel'];
-            const opts = { multiple: false };
-            try {
-                if ('contacts' in navigator && 'ContactsManager' in window) {
-                    const contact = await navigator.contacts.select(props, opts);
-                    if (contact && contact.length > 0) {
-                        const sel = contact[0];
-                        document.getElementById('nombreCliente').value = sel.name[0] || "";
-                        if (sel.tel && sel.tel.length > 0) {
-                            let tel = sel.tel[0].replace(/\s/g, '').replace(/-/g, '').replace(/\+/g, '');
-                            document.getElementById('whatsappCliente').value = tel;
-                        }
-                    }
-                } else {
-                    alert("Tu navegador no soporta la selección directa de contactos. Por favor, escríbelo manualmente.");
-                }
-            } catch (err) {
-                console.log("Error al seleccionar contacto: ", err);
-            }
-        }
-
         function generarTabla() {
             const limite = parseInt(config.rango);
             const contenedor = document.getElementById('contenedorTabla');
@@ -163,9 +145,13 @@
                 const bola = document.createElement('div');
                 bola.className = `numero-bola ${info ? 'vendido' : 'libre'}`;
                 if (seleccionados.includes(numStr)) bola.classList.add('seleccionado');
-                bola.innerHTML = numStr;
                 bola.dataset.cliente = info ? info.nombre.toLowerCase() : '';
+                
+                bola.innerHTML = `<span class="num-text">${numStr}</span>`;
+
                 if (info) {
+                    bola.innerHTML += `<img src="${URL_DUENDE}" crossorigin="anonymous" style="width:100%; height:100%; object-fit:cover; position:absolute; inset:0; border-radius:50%;">`;
+                    bola.querySelector('.num-text').style.visibility = 'hidden'; 
                     bola.onclick = () => abrirGestionPago(numStr);
                     bola.onmouseenter = (e) => mostrarTooltip(e, numStr);
                     bola.onmousemove = (e) => moverTooltip(e);
@@ -178,62 +164,145 @@
             actualizarDashboard();
         }
 
+        async function compartirDisponibles() {
+            const contenedor = document.getElementById('contenedorTabla');
+            const buscador = document.getElementById('buscador');
+            const btn = document.getElementById('btnCompartir');
+            
+            const busquedaPrevia = buscador.value;
+            buscador.value = ""; 
+            filtrarNumeros();
+            btn.innerText = "⏳ CAPTURANDO...";
+            btn.disabled = true;
+
+            const originalStyle = contenedor.style.cssText;
+            
+            contenedor.style.width = "1000px"; 
+            contenedor.style.gridTemplateColumns = "repeat(10, 1fr)";
+            contenedor.style.gap = "15px";
+            contenedor.style.padding = "50px";
+            contenedor.style.display = "grid";
+            contenedor.style.backgroundColor = "#0a0a0a";
+
+            const bolas = contenedor.querySelectorAll('.numero-bola');
+            bolas.forEach(b => {
+                b.style.display = "flex";
+                b.style.alignItems = "center";
+                b.style.justifyContent = "center";
+                b.style.width = "80px";
+                b.style.height = "80px";
+                b.style.fontSize = "32px";
+                b.style.lineHeight = "80px";
+                
+                const span = b.querySelector('.num-text');
+                if (span) {
+                    span.style.display = "block";
+                    span.style.visibility = "visible";
+                }
+            });
+
+            await new Promise(r => setTimeout(r, 600));
+
+            try {
+                const canvas = await html2canvas(contenedor, {
+                    backgroundColor: "#0a0a0a",
+                    scale: 2, 
+                    useCORS: true,
+                    logging: false,
+                    scrollX: 0,
+                    scrollY: -window.scrollY 
+                });
+
+                await new Promise(r => setTimeout(r, 400));
+
+                const dataUrl = canvas.toDataURL("image/png");
+                const blob = await (await fetch(dataUrl)).blob();
+                const file = new File([blob], 'rifa_hsa.png', { type: 'image/png' });
+
+                if (navigator.share) {
+                    await navigator.share({
+                        files: [file],
+                        title: 'HSA Dynamics',
+                        text: `🍀 Números Disponibles - ${config.nombre || 'Sorteo'}`
+                    });
+                } else {
+                    const link = document.createElement('a');
+                    link.download = `Tickets_HSA.png`;
+                    link.href = dataUrl;
+                    link.click();
+                }
+            } catch (e) {
+                console.error("Error:", e);
+            } finally {
+                contenedor.style.cssText = originalStyle;
+                bolas.forEach(b => b.style.cssText = "");
+                buscador.value = busquedaPrevia;
+                filtrarNumeros();
+                btn.innerText = "🟢 Libres";
+                btn.disabled = false;
+            }
+        }
+
+        // Lógica de Tooltip corregida para mostrar toda la info de la imagen
         function mostrarTooltip(e, num) {
-            const i = rifaDatos[num];
-            if(!i) { ocultarTooltip(); return; }
-            const totalVenta = i.numerosEnVenta.length * parseFloat(config.valor);
-            const abonado = i.pago === 'total' ? totalVenta : i.abonoTotal;
-            const deuda = totalVenta - abonado;
-            const colorEstado = i.pago === 'total' ? 'text-emerald-400' : 'text-rose-500';
+            const i = rifaDatos[num]; if(!i) return;
+            const vt = i.numerosEnVenta.length * parseFloat(config.valor);
+            const ab = i.pago === 'total' ? vt : i.abonoTotal;
+            const saldo = vt - ab;
+
             tooltip.style.display = 'block';
             tooltip.innerHTML = `
-                <div style="border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:10px;">
-                    <div style="font-size:10px; color:#888; font-weight:bold; text-transform:uppercase;">Cliente</div>
-                    <div style="font-weight:900; font-size:16px; color:#fff;">${i.nombre}</div>
-                    <div style="font-size:11px; color:#10b981;">📱 ${i.whatsapp}</div>
-                </div>
-                <div style="font-size:12px; line-height:1.8; color:#ddd;">
-                    <div style="display:flex; justify-content:space-between;"><span>🔢 Tickets:</span><b>${i.numerosEnVenta.join(", ")}</b></div>
-                    <div style="display:flex; justify-content:space-between;"><span>💰 Total:</span><b>$${totalVenta.toLocaleString()}</b></div>
-                    <div style="display:flex; justify-content:space-between;"><span>✅ Abonado:</span><b style="color:#10b981;">$${abonado.toLocaleString()}</b></div>
-                    <div style="display:flex; justify-content:space-between; border-top:1px solid #333; margin-top:8px; padding-top:8px;">
-                        <span>🚩 SALDO:</span><b class="${colorEstado}">$${deuda.toLocaleString()}</b>
+                <div class="space-y-2">
+                    <div>
+                        <p class="text-[10px] text-zinc-500 uppercase font-black">CLIENTE</p>
+                        <p class="text-lg font-black text-white leading-tight">${i.nombre}</p>
+                        <p class="text-emerald-500 text-[10px] font-bold">📱 ${i.whatsapp}</p>
                     </div>
-                </div>`;
+                    <div class="border-t border-zinc-800 pt-2 space-y-1">
+                        <div class="flex justify-between text-[11px]">
+                            <span class="text-zinc-400 font-bold">🔢 Tickets:</span>
+                            <span class="text-white font-black">${i.numerosEnVenta.length}</span>
+                        </div>
+                        <div class="flex justify-between text-[11px]">
+                            <span class="text-zinc-400 font-bold">💰 Total:</span>
+                            <span class="text-white font-black">$${vt.toLocaleString()}</span>
+                        </div>
+                        <div class="flex justify-between text-[11px]">
+                            <span class="text-zinc-400 font-bold">✅ Abonado:</span>
+                            <span class="text-emerald-500 font-black">$${ab.toLocaleString()}</span>
+                        </div>
+                    </div>
+                    <div class="border-t border-zinc-800 pt-2 flex justify-between items-center">
+                        <span class="text-[10px] text-zinc-400 font-black uppercase">🚩 SALDO:</span>
+                        <span class="text-lg font-black ${saldo > 0 ? 'text-rose-500' : 'text-emerald-500'}">$${saldo.toLocaleString()}</span>
+                    </div>
+                </div>
+            `;
             moverTooltip(e);
         }
 
-        function moverTooltip(e) {
-            let x = e.clientX + 15; let y = e.clientY + 15;
-            if (x + 280 > window.innerWidth) x = e.clientX - 280;
-            if (y + 180 > window.innerHeight) y = e.clientY - 190;
-            tooltip.style.left = x + 'px'; tooltip.style.top = y + 'px';
-        }
-
+        function moverTooltip(e) { tooltip.style.left = (e.clientX + 15) + 'px'; tooltip.style.top = (e.clientY + 15) + 'px'; }
         function ocultarTooltip() { tooltip.style.display = 'none'; }
 
         function abrirGestionPago(num) {
             numeroActivoParaPago = num;
             const i = rifaDatos[num];
-            const totalVenta = i.numerosEnVenta.length * parseFloat(config.valor);
-            const abonado = i.pago === 'total' ? totalVenta : i.abonoTotal;
-            const deuda = totalVenta - abonado;
+            const vt = i.numerosEnVenta.length * parseFloat(config.valor);
+            const ab = i.pago === 'total' ? vt : i.abonoTotal;
             document.getElementById('pagoTitulo').innerText = i.nombre;
-            document.getElementById('pagoSubtitulo').innerText = `Tickets: ${i.numerosEnVenta.join(", ")}`;
-            document.getElementById('pagoDeudaActual').innerText = `$${deuda.toLocaleString()}`;
+            document.getElementById('pagoSubtitulo').innerText = `Números: ${i.numerosEnVenta.join(", ")}`;
+            document.getElementById('pagoDeudaActual').innerText = `$${(vt - ab).toLocaleString()}`;
             document.getElementById('modalPago').classList.remove('hidden');
-            ocultarTooltip();
         }
 
         function procesarPagoParcial() {
-            const monto = parseFloat(document.getElementById('nuevoAbonoInput').value);
-            if (!monto || monto <= 0) return;
+            const m = parseFloat(document.getElementById('nuevoAbonoInput').value);
+            if (!m) return;
             const idV = rifaDatos[numeroActivoParaPago].idVenta;
             Object.keys(rifaDatos).forEach(n => {
                 if(rifaDatos[n].idVenta === idV) {
-                    rifaDatos[n].abonoTotal += monto;
-                    rifaDatos[n].pago = 'abono';
-                    if(rifaDatos[n].abonoTotal >= (rifaDatos[n].numerosEnVenta.length * config.valor)) rifaDatos[n].pago = 'total';
+                    rifaDatos[n].abonoTotal += m;
+                    rifaDatos[n].pago = (rifaDatos[n].abonoTotal >= (rifaDatos[n].numerosEnVenta.length * config.valor)) ? 'total' : 'abono';
                 }
             });
             guardarLocal(); cerrarModalPago(); generarTabla();
@@ -246,7 +315,7 @@
         }
 
         function confirmarLiberar() {
-            if(confirm("¿Seguro?")) {
+            if(confirm("¿Liberar estos números?")) {
                 const idV = rifaDatos[numeroActivoParaPago].idVenta;
                 Object.keys(rifaDatos).forEach(n => { if(rifaDatos[n].idVenta === idV) delete rifaDatos[n]; });
                 guardarLocal(); cerrarModalPago(); generarTabla();
@@ -254,7 +323,7 @@
         }
 
         function cerrarModalPago() { document.getElementById('modalPago').classList.add('hidden'); }
-
+        
         function manejarSeleccion(num, el) {
             const idx = seleccionados.indexOf(num);
             if (idx > -1) { seleccionados.splice(idx, 1); el.classList.remove('seleccionado'); }
@@ -263,7 +332,7 @@
             validarConfig();
         }
 
-        function guardarVenta(enviarWhatsApp) {
+        function guardarVenta(ws) {
             const nom = document.getElementById('nombreCliente').value || "Cliente";
             const tel = document.getElementById('whatsappCliente').value;
             const pag = document.getElementById('estadoPago').value;
@@ -273,7 +342,7 @@
             const idV = Date.now();
             ns.forEach(n => { rifaDatos[n] = { nombre: nom, whatsapp: tel || "S/N", pago: pag, abonoTotal: abo, numerosEnVenta: ns, idVenta: idV }; });
             guardarLocal();
-            if(enviarWhatsApp && tel) enviarWS(nom, tel, pag, abo, ns);
+            if(ws && tel) enviarWS(nom, tel, pag, abo, ns);
             cerrarModal(); seleccionados = []; document.getElementById('countSeleccion').innerText = "0"; generarTabla();
         }
 
@@ -282,7 +351,7 @@
         function cerrarModal() { document.getElementById('modalRegistro').classList.add('hidden'); }
         function guardarLocal() { localStorage.setItem('rifa_onyx_v21', JSON.stringify(rifaDatos)); }
         function cambiarRango() { config.rango = document.getElementById('rangoRifa').value; validarConfig(); generarTabla(); }
-
+        
         function validarConfig() {
             config.nombre = document.getElementById('confNombre').value;
             config.valor = document.getElementById('confValor').value;
@@ -322,8 +391,7 @@
 
         function enviarWS(nom, tel, pag, abo, ns) {
             const vt = ns.length * config.valor;
-            const pagado = pag === 'total' ? vt : abo;
-            const msg = `*🎫 RECIBO HSA DYNAMICS*%0A👤 *Cliente:* ${nom}%0A🔢 *Tickets:* ${ns.join(", ")}%0A💰 *Total:* $${vt}%0A✅ *Abonado:* $${pagado}%0A🚩 *Resta:* $${vt-pagado}%0A🍀 ¡Suerte!`;
+            const msg = `*🎫 RECIBO HSA DYNAMICS*%0A👤 *Cliente:* ${nom}%0A🔢 *Tickets:* ${ns.join(", ")}%0A💰 *Total:* $${vt}%0A✅ *Abonado:* $${pag === 'total' ? vt : abo}%0A🍀 ¡Suerte!`;
             window.open(`https://api.whatsapp.com/send?phone=${tel.replace(/\D/g,'')}&text=${msg}`);
         }
 
@@ -332,34 +400,22 @@
             Object.keys(rifaDatos).sort((a,b)=>a-b).forEach(n => {
                 const d = rifaDatos[n];
                 const totalV = d.numerosEnVenta.length * config.valor;
-                const pagado = d.pago === 'total' ? totalV : d.abonoTotal;
-                csv += `${n};${d.nombre};${d.whatsapp};${d.pago};${totalV-pagado}\n`;
+                csv += `${n};${d.nombre};${d.whatsapp};${d.pago};${totalV-(d.pago==='total'?totalV:d.abonoTotal)}\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
             const a = document.createElement('a'); a.href = window.URL.createObjectURL(blob);
             a.download = `Reporte_HSA.csv`; a.click();
         }
 
-        function resetearSistema() { if(confirm("¿Borrar todo?")) { rifaDatos = {}; localStorage.removeItem('rifa_onyx_v21'); generarTabla(); } }
-
-        function compartirDisponibles() {
-            const limite = parseInt(config.rango);
-            let libres = [];
-            for (let i = 0; i < limite; i++) {
-                const n = i.toString().padStart(limite === 1000 ? 3 : 2, '0');
-                if (!rifaDatos[n]) libres.push(n);
-            }
-            window.open(`https://api.whatsapp.com/send?text=*🍀 LIBRES:*%0A${libres.slice(0, 50).join(" - ")}`);
-        }
+        function resetearSistema() { if(confirm("¿Borrar todo el sorteo?")) { rifaDatos = {}; localStorage.removeItem('rifa_onyx_v21'); generarTabla(); } }
 
         function enviarPendientesWhatsApp() {
-            let res = "*🚩 DEUDORES HSA:*%0A";
+            let res = "*🚩 DEUDORES HSA DYNAMICS:*%0A";
             let p = new Set();
             Object.keys(rifaDatos).forEach(n => {
                 const v = rifaDatos[n];
                 if (v.pago !== 'total' && !p.has(v.idVenta)) {
-                    const pen = (v.numerosEnVenta.length * config.valor) - v.abonoTotal;
-                    res += `%0A👤 ${v.nombre} (${v.numerosEnVenta.join(",")})%0A💰 Debe: $${pen.toLocaleString()}%0A`;
+                    res += `%0A👤 ${v.nombre} ($${((v.numerosEnVenta.length * config.valor) - v.abonoTotal).toLocaleString()})`;
                     p.add(v.idVenta);
                 }
             });
