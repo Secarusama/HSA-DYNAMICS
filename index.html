@@ -16,7 +16,7 @@
         
         #contenedorTabla { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 5px; padding: 12px; background-color: #0a0a0a; border-radius: 15px; border: 1px solid #1a1a1a; width: 100%; }
         
-        .numero-bola { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: all 0.2s ease; font-size: 0.75rem; font-weight: 900; user-select: none; border: 1px solid #1a1a1a; color: #ffffff; position: relative; overflow: hidden; text-align: center; }
+        .numero-bola { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: all 0.2s ease; font-size: 1.9rem; font-weight: 900; user-select: none; border: 2px solid #1a1a1a; color: #ffffff; position: relative; overflow: hidden; text-align: center; }
         .libre { background: linear-gradient(145deg, #064e3b, #022c22); border-color: #059669; } 
         .seleccionado { background: #3b82f6 !important; border-color: #ffffff; transform: scale(1.1); z-index: 10; box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
         .vendido { border-color: #71ef44; color: transparent !important; }
@@ -39,12 +39,12 @@
                         <img id="logoApp" src="https://i.ibb.co/HL9PDYfW/duende.jpg" crossorigin="anonymous" class="w-full h-full object-cover">
                     </div>
                     <div>
-                        <h1 class="text-lg font-black text-white leading-none">HSA <span class="text-emerald-500">DYNAMICS</span></h1>
-                        <span class="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">Digital CRM</span>
+                        <h1 class="text-lg font-black text-white leading-none">HSA <span class="text-emerald-500">DYNAMIC,S</span></h1>
+                        <span class="text-[11px] text-zinc-500 font-bold uppercase tracking-widest">SORTEOS DIARIOS</span>
                     </div>
                 </div>
                 <div class="flex gap-1 flex-wrap justify-end">
-                    <button id="btnCompartir" onclick="compartirDisponibles()" class="p-2 bg-emerald-900/20 text-emerald-500 rounded-lg border border-emerald-800/30 text-[8px] font-bold uppercase">🟢 Libres</button>
+                    <button id="btnCompartir" onclick="compartirDisponibles()" class="p-2 bg-emerald-900/20 text-emerald-500 rounded-lg border border-emerald-800/30 text-[10px] font-bold uppercase">🟢 Libres</button>
                     <button onclick="enviarPendientesWhatsApp()" class="p-2 bg-rose-900/20 text-rose-500 rounded-lg border border-rose-800/30 text-[8px] font-bold uppercase">🔴 Deudores</button>
                     <button onclick="exportarPDF()" class="p-2 bg-zinc-800 text-zinc-300 rounded-lg border border-zinc-700 text-[8px] font-bold uppercase">📄 PDF</button>
                     <button onclick="resetearSistema()" class="p-2 bg-zinc-900 text-zinc-600 rounded-lg border border-zinc-800 text-[8px] font-bold uppercase">🗑️ Reset</button>
@@ -79,7 +79,7 @@
                 <span id="countSeleccion" class="text-xl font-black text-emerald-500 leading-none">0</span>
                 <span class="text-[8px] uppercase font-bold text-zinc-500">Tickets</span>
             </div>
-            <button onclick="abrirModalMulti()" id="btnVender" disabled class="bg-zinc-800 text-zinc-500 px-8 py-3 rounded-[1.5rem] font-black text-[10px] uppercase shadow-lg transition-all">VENDER</button>
+            <button onclick="abrirModalMulti()" id="btnVender" class="bg-emerald-600 text-white px-8 py-3 rounded-[1.5rem] font-black text-[10px] uppercase cursor-pointer" style="display: block !important; opacity: 1 !important; visibility: visible !important;">VENDER</button>
         </div>
     </div>
 
@@ -93,13 +93,13 @@
                 </div>
                 <input type="tel" id="whatsappCliente" class="w-full p-3 rounded-xl text-xs" placeholder="WhatsApp (Opcional)">
                 <select id="estadoPago" onchange="toggleAbono()" class="w-full p-3 rounded-xl text-xs font-bold">
-                    <option value="total">PAGÓ TODO 🟢</option>
-                    <option value="abono">ABONO PARCIAL 🟡</option>
-                    <option value="nada">DEBE TODO 🔴</option>
+                    <option value="nada">DEBE🔴</option>
+                    <option value="total">PAGÓ🟢</option>
+                    <option value="abono">ABONO🟡</option>
                 </select>
                 <input type="number" id="montoAbonado" class="hidden w-full p-3 rounded-xl border border-yellow-700/50 text-yellow-500 font-bold text-center" placeholder="Monto del abono">
                 <button onclick="guardarVenta(true)" class="w-full bg-emerald-600 py-3 rounded-xl font-black text-white text-[10px] uppercase">✅ Guardar y Enviar</button>
-                <button onclick="guardarVenta(false)" class="w-full bg-zinc-800 py-3 rounded-xl font-black text-zinc-400 text-[10px] uppercase border border-white/5">💾 Solo Guardar</button>
+                <button onclick="guardarVenta(false)" class="w-full bg-zinc-800 py-3 rounded-xl font-black text-zinc-400 text-[10px] uppercase border border-white/5">💾 Guardar</button>
                 <button onclick="cerrarModal()" class="w-full py-2 text-zinc-600 text-[9px] uppercase font-bold">CANCELAR</button>
             </div>
         </div>
@@ -114,7 +114,7 @@
                 <p id="pagoDeudaActual" class="text-2xl font-black text-rose-500">$0</p>
             </div>
             <div class="space-y-3">
-                <input type="number" id="nuevoAbonoInput" class="w-full p-3 rounded-xl text-xs" placeholder="Sumar abono...">
+                <input type="number" id="montoAbonado" class="w-full p-3 rounded-xl border border-yellow-700/50 text-yellow-500 font-bold text-center" placeholder="Monto del abono">
                 <button onclick="procesarPagoParcial()" class="w-full bg-yellow-600 py-3 rounded-xl font-black text-white text-[10px] uppercase">➕ REGISTRAR ABONO</button>
                 <button onclick="procesarPagoTotal()" class="w-full bg-emerald-600 py-3 rounded-xl font-black text-white text-[10px] uppercase">💰 LIQUIDAR DEUDA</button>
                 <div class="grid grid-cols-2 gap-2">
@@ -350,11 +350,11 @@
         if (span) {
             span.style.cssText = `
                 position: absolute;
-                top: 50%;
+                top: 20%;
                 left: 50%;
                 transform: translate(-50%, -50%);
                 z-index: 10;
-                font-size: 28px;
+                font-size: 60px;
                 font-weight: 900;
                 line-height: 1;
                 text-align: center;
@@ -469,32 +469,70 @@
             cerrarModal(); seleccionados = []; document.getElementById('countSeleccion').innerText = "0"; generarTabla();
         }
 
-        function toggleAbono() { document.getElementById('montoAbonado').classList.toggle('hidden', document.getElementById('estadoPago').value !== 'abono'); }
-        function abrirModalMulti() { document.getElementById('modalRegistro').classList.remove('hidden'); }
+        function toggleAbono() {
+    const estado = document.getElementById('estadoPago').value;
+    const campoAbono = document.getElementById('montoAbonado');
+    const totalVenta = seleccionados.length * parseFloat(config.valor || 0);
+    
+    // Aseguramos que SIEMPRE sea visible (quitamos hidden por si acaso)
+    campoAbono.classList.remove('hidden'); 
+
+    if (estado === 'nada') { // DEBE 🔴
+        campoAbono.value = 0;
+        campoAbono.readOnly = true;
+        campoAbono.style.opacity = "0.6";
+    } else if (estado === 'total') { // PAGÓ 🟢
+        campoAbono.value = totalVenta;
+        campoAbono.readOnly = true;
+        campoAbono.style.opacity = "0.6";
+    } else if (estado === 'abono') { // ABONO 🟡
+        campoAbono.value = '';
+        campoAbono.readOnly = false;
+        campoAbono.style.opacity = "1";
+        campoAbono.focus();
+    }
+}
         function cerrarModal() { 
     document.getElementById('modalRegistro').classList.add('hidden');
     
-    // Limpieza de campos para la siguiente venta
+    // Limpieza de textos
     document.getElementById('nombreCliente').value = '';
     document.getElementById('whatsappCliente').value = '';
-    document.getElementById('montoAbonado').value = '';
-    document.getElementById('estadoPago').value = 'total'; 
-    document.getElementById('montoAbonado').classList.add('hidden');
+    
+    // Resetear al estado que pediste
+    const estadoPago = document.getElementById('estadoPago');
+    const montoAbonado = document.getElementById('montoAbonado');
+    
+    estadoPago.value = 'nada'; 
+    montoAbonado.value = 0;
+    montoAbonado.readOnly = true;
+    montoAbonado.style.opacity = "0.6";
+    montoAbonado.classList.remove('hidden'); // Siempre visible al cerrar/abrir
 }
         function guardarLocal() { localStorage.setItem('rifa_onyx_v21', JSON.stringify(rifaDatos)); }
         function cambiarRango() { config.rango = document.getElementById('rangoRifa').value; validarConfig(); generarTabla(); }
         
         function validarConfig() {
-            config.nombre = document.getElementById('confNombre').value;
-            config.valor = document.getElementById('confValor').value;
-            config.fecha = document.getElementById('confFecha').value;
-            config.rango = document.getElementById('rangoRifa').value;
-            localStorage.setItem('rifa_conf_v21', JSON.stringify(config));
-            const btn = document.getElementById('btnVender');
-            btn.disabled = !(config.nombre && config.valor > 0 && seleccionados.length > 0);
-            btn.className = btn.disabled ? "bg-zinc-800 text-zinc-500 px-8 py-3 rounded-[1.5rem] font-black text-[10px] uppercase" : "bg-emerald-600 text-white px-8 py-3 rounded-[1.5rem] font-black text-[10px] uppercase cursor-pointer";
-            actualizarDashboard();
-        }
+    config.nombre = document.getElementById('confNombre').value;
+    config.valor = document.getElementById('confValor').value;
+    config.fecha = document.getElementById('confFecha').value;
+    config.rango = document.getElementById('rangoRifa').value;
+    localStorage.setItem('rifa_conf_v21', JSON.stringify(config));
+    
+    const btn = document.getElementById('btnVender');
+    
+    // Si hay números seleccionados, el botón SE ACTIVA sí o sí
+    if (seleccionados.length > 0) {
+        btn.disabled = false;
+        btn.classList.remove('bg-zinc-800', 'text-zinc-500');
+        btn.classList.add('bg-emerald-600', 'text-white', 'cursor-pointer');
+    } else {
+        btn.disabled = true;
+        btn.classList.add('bg-zinc-800', 'text-zinc-500');
+        btn.classList.remove('bg-emerald-600', 'text-white', 'cursor-pointer');
+    }
+    actualizarDashboard();
+}
 
         function actualizarDashboard() {
             let r = 0, d = 0, p = new Set();
@@ -521,28 +559,102 @@
         }
 
         function enviarWS(nom, tel, pag, abo, ns) {
-            const vt = ns.length * config.valor;
-            const abonado = (pag === 'total') ? vt : abo;
-            const deuda = vt - abonado;
-            let msg = `*🎫 TICKET HSA DYNAMICS*%0A👤 *Cliente:* ${nom}%0A🔢 *Numero:* ${ns.join(", ")}%0A💰 *Total:* $${vt.toLocaleString()}%0A✅ *Abonado:* $${abonado.toLocaleString()}%0A`;
-            if (deuda > 0) msg += `🚩 *Deuda:* $${deuda.toLocaleString()}%0A`;
-            msg += `%0A*💳 PAGOS:*%0A- Nequi: 3226050197%0A- Daviplata: 3226050197%0A- *Ahorros Bancolombia:* 88263229171%0A- HSA Dynamics te desea 🍀¡Suerte!`;
-            window.open(`https://api.whatsapp.com/send?text=${msg}`);
-        }
+    const vt = ns.length * config.valor; // Valor Total
+    const abonado = (pag === 'total') ? vt : abo; // Lo que ya pagó
+    const deuda = vt - abonado; // Lo que resta
+    const fechaSorteo = config.fecha || "Por definir";
+    const nombreSorteo = config.nombre || "Gran Rifa HSA";
+
+    let msg = `*✨ ${nombreSorteo.toUpperCase()} ✨*%0A`;
+    msg += `TICKET HSA Dynamics%0A`;
+    msg += `━━━━━━━━━━━━━━━━━━%0A`;
+    msg += `👤 *CLIENTE:* ${nom.toUpperCase()}%0A`;
+    msg += `🗓️ *FECHA:* ${fechaSorteo}%0A`;
+    msg += `🔢 *NÚMEROS:* ${ns.join(" - ")}%0A`;
+    msg += `━━━━━━━━━━━━━━━━━━%0A`;
+    msg += `💰 *VALOR TOTAL:* $${vt.toLocaleString()}%0A`;
+    msg += `💵 *ABONADO:* $${abonado.toLocaleString()}%0A`;
+
+    if (deuda > 0) {
+        msg += `🚩 *PENDIENTE:* $${deuda.toLocaleString()}%0A`;
+        msg += `⚠️ _Recuerda liquidar antes del sorteo_%0A`;
+    } else {
+        msg += `✅ *ESTADO:* PAGADO TOTAL%0A`;
+    }
+
+    msg += `━━━━━━━━━━━━━━━━━━%0A`;
+    msg += `*💳 MEDIOS DE PAGO:*%0A`;
+    msg += `• Nequi: 3226050197%0A`;
+    msg += `• Daviplata: 3226050197%0A`;
+    msg += `• Bancolombia: 88263229171%0A`;
+    msg += `%0A🍀 *¡Mucha suerte con HSA Dynamics!*`;
+
+    // Abrir WhatsApp con el mensaje formateado
+    window.open(`https://api.whatsapp.com/send?text=${msg}`);
+}
 
         function enviarPendientesWhatsApp() {
-            let res = "*🚩 DEUDORES HSA DYNAMICS:*%0A"; let p = new Set();
-            Object.keys(rifaDatos).forEach(n => {
-                const v = rifaDatos[n];
-                if (v.pago !== 'total' && !p.has(v.idVenta)) {
-                    res += `%0A👤 ${v.nombre} ($${((v.numerosEnVenta.length * config.valor) - v.abonoTotal).toLocaleString()})`;
-                    p.add(v.idVenta);
-                }
-            });
-            window.open(`https://api.whatsapp.com/send?text=${res}`);
+    let totalDeudaGlobal = 0;
+    let listaDeudores = "";
+    let idsProcesados = new Set();
+    
+    // Recorremos los datos para agrupar por venta y calcular
+    Object.keys(rifaDatos).forEach(n => {
+        const v = rifaDatos[n];
+        if (v.pago !== 'total' && !idsProcesados.has(v.idVenta)) {
+            const totalVenta = v.numerosEnVenta.length * config.valor;
+            const deudaCliente = totalVenta - v.abonoTotal;
+            
+            totalDeudaGlobal += deudaCliente;
+            listaDeudores += `👤 *${v.nombre.toUpperCase()}*%0A`;
+            listaDeudores += `🔢 Tickets: ${v.numerosEnVenta.join(", ")}%0A`;
+            listaDeudores += `🚩 Debe: *$${deudaCliente.toLocaleString()}*%0A%0A`;
+            
+            idsProcesados.add(v.idVenta);
         }
+    });
+
+    if (totalDeudaGlobal === 0) {
+        alert("¡Felicidades! No hay deudores pendientes.");
+        return;
+    }
+
+    let msg = `*🔴 REPORTE DE PENDIENTES - HSA DYNAMICS*%0A`;
+    msg += `━━━━━━━━━━━━━━━━━━%0A`;
+    msg += `💰 *TOTAL POR COBRAR:* $${totalDeudaGlobal.toLocaleString()}%0A`;
+    msg += `━━━━━━━━━━━━━━━━━━%0A%0A`;
+    msg += listaDeudores;
+    msg += `━━━━━━━━━━━━━━━━━━%0A`;
+    msg += `*💳 MEDIOS DE PAGO:*%0A`;
+    msg += `• Nequi: 3226050197%0A`;
+    msg += `• Daviplata: 3226050197%0A`;
+    msg += `• Bancolombia: 88263229171%0A`;
+    msg += `━━━━━━━━━━━━━━━━━━%0A`;
+    msg += `_Favor enviar comprobante de pago._`;
+
+    window.open(`https://api.whatsapp.com/send?text=${msg}`);
+}
 
         function resetearSistema() { if(confirm("¿Borrar todo?")) { rifaDatos = {}; localStorage.removeItem('rifa_onyx_v21'); generarTabla(); } }
+      
+      function abrirModalMulti() { 
+    // 1. Muestra el modal de registro
+    document.getElementById('modalRegistro').classList.remove('hidden'); 
+    
+    // 2. Referencias a los campos
+    const estadoPago = document.getElementById('estadoPago');
+    const montoAbonado = document.getElementById('montoAbonado');
+    const totalVenta = seleccionados.length * parseFloat(config.valor || 0);
+
+    // 3. Configuración que pediste: Siempre DEBE por defecto
+    estadoPago.value = 'nada'; 
+    
+    // 4. Configuración del Abono: Visible y en 0
+    montoAbonado.classList.remove('hidden'); // Asegura visibilidad
+    montoAbonado.value = 0;                  // Valor inicial 0
+    montoAbonado.readOnly = true;            // Bloqueado si es DEBE
+    montoAbonado.style.opacity = "0.6";      // Estilo visual de bloqueado
+}
         
         inicializar();
     </script>
