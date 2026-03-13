@@ -6,6 +6,9 @@
     <title>HSA Dynamics - Gestión de Rifas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { background-color: #050505; color: #e2e8f0; font-family: 'Inter', sans-serif; min-height: 100vh; position: relative; }
@@ -33,7 +36,7 @@
             <div class="flex justify-between items-center mb-4 border-b border-[#1a1a1a] pb-4">
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded-xl overflow-hidden border border-emerald-500">
-                        <img src="https://i.ibb.co/HL9PDYfW/duende.jpg" class="w-full h-full object-cover">
+                        <img id="logoApp" src="https://i.ibb.co/HL9PDYfW/duende.jpg" crossorigin="anonymous" class="w-full h-full object-cover">
                     </div>
                     <div>
                         <h1 class="text-lg font-black text-white leading-none">HSA <span class="text-emerald-500">DYNAMICS</span></h1>
@@ -43,7 +46,7 @@
                 <div class="flex gap-1 flex-wrap justify-end">
                     <button id="btnCompartir" onclick="compartirDisponibles()" class="p-2 bg-emerald-900/20 text-emerald-500 rounded-lg border border-emerald-800/30 text-[8px] font-bold uppercase">🟢 Libres</button>
                     <button onclick="enviarPendientesWhatsApp()" class="p-2 bg-rose-900/20 text-rose-500 rounded-lg border border-rose-800/30 text-[8px] font-bold uppercase">🔴 Deudores</button>
-                    <button onclick="exportarExcel()" class="p-2 bg-zinc-800 text-zinc-300 rounded-lg border border-zinc-700 text-[8px] font-bold uppercase">📥 Excel</button>
+                    <button onclick="exportarPDF()" class="p-2 bg-zinc-800 text-zinc-300 rounded-lg border border-zinc-700 text-[8px] font-bold uppercase">📄 PDF</button>
                     <button onclick="resetearSistema()" class="p-2 bg-zinc-900 text-zinc-600 rounded-lg border border-zinc-800 text-[8px] font-bold uppercase">🗑️ Reset</button>
                 </div>
             </div>
@@ -138,22 +141,126 @@
             generarTabla();
         }
 
-        // FUNCION PARA SELECCIONAR CONTACTOS DEL CELULAR
-        async function seleccionarContacto() {
-            const props = ['name', 'tel'];
-            const opts = { multiple: false };
+        // --- PDF AGRUPADO POR CLIENTE ---
+        async function exportarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
             try {
-                const contacts = await navigator.contacts.select(props, opts);
-                if (contacts.length > 0) {
-                    const contact = contacts[0];
-                    if (contact.name) document.getElementById('nombreCliente').value = contact.name[0];
-                    if (contact.tel) document.getElementById('whatsappCliente').value = contact.tel[0].replace(/\s+/g, '');
+                const img = document.getElementById('logoApp');
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                const base64Img = canvas.toDataURL('image/jpeg');
+                doc.addImage(base64Img, 'JPEG', 14, 10, 20, 20);
+            } catch (e) { console.warn("Logo no disponible"); }
+
+            doc.setFontSize(18);
+            doc.text(`REPORTES HSA DYNAMICS`, 40, 20);
+            doc.setFontSize(10);
+            doc.text(`Sorteo: ${config.nombre || 'N/A'}`, 40, 26);
+            doc.text(`Fecha: ${config.fecha || 'N/A'}`, 40, 31);
+
+            const filas = [];
+            const idsProcesados = new Set();
+            const numerosSorteados = Object.keys(rifaDatos).sort((a, b) => a - b);
+
+            numerosSorteados.forEach(n => {
+                const d = rifaDatos[n];
+                // Solo procesamos una vez cada grupo de venta (idVenta)
+                if (!idsProcesados.has(d.idVenta)) {
+                    const vTicket = parseFloat(config.valor) || 0;
+                    const cantidad = d.numerosEnVenta.length;
+                    const totalVenta = cantidad * vTicket;
+                    const abonado = d.pago === 'total' ? totalVenta : (d.abonoTotal || 0);
+                    const deuda = totalVenta - abonado;
+
+                    filas.push([
+                        d.numerosEnVenta.join(", "), // Números comprados separados por coma
+                        `$${vTicket.toLocaleString()}`,
+                        d.nombre,
+                        `$${abonado.toLocaleString()}`,
+                        `$${deuda.toLocaleString()}`,
+                        d.whatsapp || "S/N"
+                    ]);
+                    idsProcesados.add(d.idVenta);
                 }
-            } catch (ex) {
-                console.log("Contact Picker no soportado o cancelado.");
-                alert("Usa un navegador móvil moderno para usar esta función.");
+            });
+
+            doc.autoTable({
+                startY: 40,
+                head: [['Números', 'Valor Un.', 'Cliente', 'Abono', 'Deuda', 'Celular']],
+                body: filas,
+                theme: 'grid',
+                headStyles: { fillGray: [20, 20, 20], textColor: 255 },
+                styles: { fontSize: 8 },
+                columnStyles: {
+                    0: { cellWidth: 35 }, // Columna de números más ancha
+                    2: { fontStyle: 'bold' }
+                }
+            });
+
+            doc.save(`Reporte_HSA.pdf`);
+        }
+
+        // --- TOOLTIP ---
+        function mostrarTooltip(e, num) {
+            const i = rifaDatos[num]; if(!i) return;
+            const vt = i.numerosEnVenta.length * (parseFloat(config.valor) || 0);
+            const ab = i.pago === 'total' ? vt : (i.abonoTotal || 0);
+            const saldo = vt - ab;
+            
+            tooltip.style.display = 'block';
+            tooltip.innerHTML = `
+                <div class="space-y-2">
+                    <div>
+                        <p class="text-[10px] text-zinc-500 uppercase font-black">CLIENTE</p>
+                        <p class="text-lg font-black text-white leading-tight">${i.nombre}</p>
+                        <p class="text-emerald-500 text-[10px] font-bold">📱 ${i.whatsapp || 'S/N'}</p>
+                    </div>
+                    <div class="border-t border-zinc-800 pt-2 space-y-1">
+                        <div class="flex justify-between text-[11px]"><span class="text-zinc-400 font-bold">🔢 Tickets:</span><span class="text-white font-black">${i.numerosEnVenta.join(", ")}</span></div>
+                        <div class="flex justify-between text-[11px]"><span class="text-zinc-400 font-bold">💰 Total:</span><span class="text-white font-black">$${vt.toLocaleString()}</span></div>
+                        <div class="flex justify-between text-[11px]"><span class="text-zinc-400 font-bold">✅ Abonado:</span><span class="text-emerald-500 font-black">$${ab.toLocaleString()}</span></div>
+                    </div>
+                    <div class="border-t border-zinc-800 pt-2 flex justify-between items-center"><span class="text-[10px] text-zinc-400 font-black uppercase">🚩 SALDO:</span><span class="text-lg font-black ${saldo > 0 ? 'text-rose-500' : 'text-emerald-500'}">$${saldo.toLocaleString()}</span></div>
+                </div>`;
+            moverTooltip(e);
+        }
+
+        function moverTooltip(e) { tooltip.style.left = (e.clientX + 15) + 'px'; tooltip.style.top = (e.clientY + 15) + 'px'; }
+        function ocultarTooltip() { tooltip.style.display = 'none'; }
+
+        // --- FUNCIONES CORE ---
+        async function seleccionarContacto() {
+    // Verificamos si el navegador soporta esta función
+    const supported = ('contacts' in navigator && 'ContactsManager' in window);
+    
+    if (!supported) {
+        alert("Tu navegador o dispositivo no soporta la selección de contactos directa.");
+        return;
+    }
+
+    const props = ['name', 'tel'];
+    try {
+        const contacts = await navigator.contacts.select(props, { multiple: false });
+        if (contacts.length > 0) {
+            const contact = contacts[0];
+            // Llenamos los campos (asegúrate que los IDs sean correctos)
+            if (contact.name && contact.name.length > 0) {
+                document.getElementById('nombreCliente').value = contact.name[0];
+            }
+            if (contact.tel && contact.tel.length > 0) {
+                // Limpiamos espacios para el WhatsApp
+                document.getElementById('whatsappCliente').value = contact.tel[0].replace(/\s+/g, '');
             }
         }
+    } catch (ex) {
+        console.log("Error o cancelación al elegir contacto:", ex);
+    }
+}
 
         function generarTabla() {
             const limite = parseInt(config.rango);
@@ -169,7 +276,6 @@
                 bola.innerHTML = `<span class="num-text">${numStr}</span>`;
                 if (info) {
                     bola.innerHTML += `<img src="${URL_DUENDE}" crossorigin="anonymous" style="width:100%; height:100%; object-fit:cover; position:absolute; inset:0; border-radius:50%;">`;
-                    bola.querySelector('.num-text').style.visibility = 'hidden'; 
                     bola.onclick = () => abrirGestionPago(numStr);
                     bola.onmouseenter = (e) => mostrarTooltip(e, numStr);
                     bola.onmousemove = (e) => moverTooltip(e);
@@ -183,68 +289,126 @@
         }
 
         async function compartirDisponibles() {
-            const contenedor = document.getElementById('contenedorTabla');
-            const buscador = document.getElementById('buscador');
-            const btn = document.getElementById('btnCompartir');
-            const busquedaPrevia = buscador.value;
-            buscador.value = ""; filtrarNumeros();
-            btn.innerText = "⏳ CAPTURANDO..."; btn.disabled = true;
-            const originalStyle = contenedor.style.cssText;
-            contenedor.style.width = "1000px"; contenedor.style.gridTemplateColumns = "repeat(10, 1fr)";
-            contenedor.style.gap = "15px"; contenedor.style.padding = "50px";
-            contenedor.style.display = "grid"; contenedor.style.backgroundColor = "#0a0a0a";
-            const bolas = contenedor.querySelectorAll('.numero-bola');
-            bolas.forEach(b => {
-                b.style.display = "flex"; b.style.alignItems = "center"; b.style.justifyContent = "center";
-                b.style.width = "80px"; b.style.height = "80px"; b.style.fontSize = "32px"; b.style.lineHeight = "80px";
-                const span = b.querySelector('.num-text');
-                if (span) { span.style.display = "block"; span.style.visibility = "visible"; }
-            });
-            await new Promise(r => setTimeout(r, 600));
-            try {
-                const canvas = await html2canvas(contenedor, { backgroundColor: "#0a0a0a", scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: -window.scrollY });
-                const dataUrl = canvas.toDataURL("image/png");
-                const blob = await (await fetch(dataUrl)).blob();
-                const file = new File([blob], 'rifa_hsa.png', { type: 'image/png' });
-                if (navigator.share) {
-                    await navigator.share({ files: [file], title: 'HSA Dynamics', text: `🍀 Números Disponibles - ${config.nombre || 'Sorteo'}` });
-                } else {
-                    const link = document.createElement('a'); link.download = `Tickets_HSA.png`; link.href = dataUrl; link.click();
-                }
-            } catch (e) { console.error(e); } 
-            finally {
-                contenedor.style.cssText = originalStyle; bolas.forEach(b => b.style.cssText = "");
-                buscador.value = busquedaPrevia; filtrarNumeros(); btn.innerText = "🟢 Libres"; btn.disabled = false;
-            }
-        }
+    const btn = document.getElementById('btnCompartir');
+    const textoOriginal = btn.innerText;
+    btn.innerText = "⏳ Generando..."; 
+    btn.disabled = true;
 
-        function mostrarTooltip(e, num) {
-            const i = rifaDatos[num]; if(!i) return;
-            const vt = i.numerosEnVenta.length * parseFloat(config.valor);
-            const ab = i.pago === 'total' ? vt : i.abonoTotal;
-            const saldo = vt - ab;
-            tooltip.style.display = 'block';
-            tooltip.innerHTML = `
-                <div class="space-y-2">
-                    <div>
-                        <p class="text-[10px] text-zinc-500 uppercase font-black">CLIENTE</p>
-                        <p class="text-lg font-black text-white leading-tight">${i.nombre}</p>
-                        <p class="text-emerald-500 text-[10px] font-bold">📱 ${i.whatsapp}</p>
-                    </div>
-                    <div class="border-t border-zinc-800 pt-2 space-y-1">
-                        <div class="flex justify-between text-[11px]"><span class="text-zinc-400 font-bold">🔢 Tickets:</span><span class="text-white font-black">${i.numerosEnVenta.length}</span></div>
-                        <div class="flex justify-between text-[11px]"><span class="text-zinc-400 font-bold">💰 Total:</span><span class="text-white font-black">$${vt.toLocaleString()}</span></div>
-                        <div class="flex justify-between text-[11px]"><span class="text-zinc-400 font-bold">✅ Abonado:</span><span class="text-emerald-500 font-black">$${ab.toLocaleString()}</span></div>
-                    </div>
-                    <div class="border-t border-zinc-800 pt-2 flex justify-between items-center"><span class="text-[10px] text-zinc-400 font-black uppercase">🚩 SALDO:</span><span class="text-lg font-black ${saldo > 0 ? 'text-rose-500' : 'text-emerald-500'}">$${saldo.toLocaleString()}</span></div>
-                </div>
+    const tablaOriginal = document.getElementById('contenedorTabla');
+    const tablaClonada = tablaOriginal.cloneNode(true);
+
+    const contenedorTemporal = document.createElement('div');
+    contenedorTemporal.style.cssText = `
+        position: absolute;
+        left: -10000px;
+        top: 0;
+        width: 1100px;
+        background-color: #050505;
+        padding: 60px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Inter', sans-serif;
+    `;
+
+    const titulo = document.createElement('h2');
+    titulo.innerText = document.getElementById('confNombre').value || "NÚMEROS DISPONIBLES";
+    titulo.style.cssText = "color: white; font-size: 36px; font-weight: 900; margin-bottom: 40px; text-transform: uppercase; text-align: center; letter-spacing: 2px;";
+    contenedorTemporal.appendChild(titulo);
+
+    tablaClonada.style.cssText = `
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        gap: 15px;
+        width: 1000px;
+        background: transparent;
+        border: none;
+    `;
+
+    const bolasClonadas = tablaClonada.querySelectorAll('.numero-bola');
+    bolasClonadas.forEach(b => {
+        // DETECTAMOS EL ESTADO PARA APLICAR EL BORDE CORRECTO
+        const esLibre = b.classList.contains('libre');
+        
+        b.style.cssText = `
+            width: 85px;
+            height: 85px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            /* --- BORDES LLAMATIVOS RECUPERADOS --- */
+            border: 3px solid ${esLibre ? '#059669' : '#71ef44'}; 
+            box-shadow: 0 0 10px ${esLibre ? 'rgba(5, 150, 105, 0.3)' : 'rgba(113, 239, 68, 0.2)'};
+            background: ${esLibre ? 'linear-gradient(145deg, #064e3b, #022c22)' : '#000'};
+        `;
+        
+        const span = b.querySelector('.num-text');
+        if (span) {
+            span.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 10;
+                font-size: 28px;
+                font-weight: 900;
+                line-height: 1;
+                text-align: center;
+                width: 100%;
+                /* Si está vendido, el número es invisible */
+                ${!esLibre ? 'color: transparent !important;' : 'color: white;'}
             `;
-            moverTooltip(e);
         }
 
-        function moverTooltip(e) { tooltip.style.left = (e.clientX + 15) + 'px'; tooltip.style.top = (e.clientY + 15) + 'px'; }
-        function ocultarTooltip() { tooltip.style.display = 'none'; }
+        const img = b.querySelector('img');
+        if (img) {
+            img.style.cssText = `
+                position: absolute;
+                top: 0; left: 0; width: 100%; height: 100%;
+                object-fit: cover;
+                z-index: 1;
+                border-radius: 50%;
+            `;
+        }
+    });
 
+    contenedorTemporal.appendChild(tablaClonada);
+    document.body.appendChild(contenedorTemporal);
+
+    await new Promise(r => setTimeout(r, 200));
+
+    try {
+        const canvas = await html2canvas(contenedorTemporal, {
+            backgroundColor: "#050505",
+            scale: 2,
+            useCORS: true,
+            width: 1100
+        });
+
+        const dataUrl = canvas.toDataURL("image/png");
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], 'rifa_hsa.png', { type: 'image/png' });
+
+        if (navigator.share) {
+            await navigator.share({ files: [file] });
+        } else {
+            const link = document.createElement('a');
+            link.download = 'rifa_hsa.png';
+            link.href = dataUrl;
+            link.click();
+        }
+    } catch (e) {
+        console.error(e);
+    } finally {
+        if (contenedorTemporal.parentNode) document.body.removeChild(contenedorTemporal);
+        btn.innerText = textoOriginal;
+        btn.disabled = false;
+    }
+}
         function abrirGestionPago(num) {
             numeroActivoParaPago = num;
             const i = rifaDatos[num];
@@ -283,7 +447,6 @@
         }
 
         function cerrarModalPago() { document.getElementById('modalPago').classList.add('hidden'); }
-        
         function manejarSeleccion(num, el) {
             const idx = seleccionados.indexOf(num);
             if (idx > -1) { seleccionados.splice(idx, 1); el.classList.remove('seleccionado'); }
@@ -308,7 +471,16 @@
 
         function toggleAbono() { document.getElementById('montoAbonado').classList.toggle('hidden', document.getElementById('estadoPago').value !== 'abono'); }
         function abrirModalMulti() { document.getElementById('modalRegistro').classList.remove('hidden'); }
-        function cerrarModal() { document.getElementById('modalRegistro').classList.add('hidden'); }
+        function cerrarModal() { 
+    document.getElementById('modalRegistro').classList.add('hidden');
+    
+    // Limpieza de campos para la siguiente venta
+    document.getElementById('nombreCliente').value = '';
+    document.getElementById('whatsappCliente').value = '';
+    document.getElementById('montoAbonado').value = '';
+    document.getElementById('estadoPago').value = 'total'; 
+    document.getElementById('montoAbonado').classList.add('hidden');
+}
         function guardarLocal() { localStorage.setItem('rifa_onyx_v21', JSON.stringify(rifaDatos)); }
         function cambiarRango() { config.rango = document.getElementById('rangoRifa').value; validarConfig(); generarTabla(); }
         
@@ -320,7 +492,7 @@
             localStorage.setItem('rifa_conf_v21', JSON.stringify(config));
             const btn = document.getElementById('btnVender');
             btn.disabled = !(config.nombre && config.valor > 0 && seleccionados.length > 0);
-            btn.className = btn.disabled ? "bg-zinc-800 text-zinc-500 px-8 py-3 rounded-[1.5rem] font-black text-[10px] uppercase shadow-lg" : "bg-emerald-600 text-white px-8 py-3 rounded-[1.5rem] font-black text-[10px] uppercase cursor-pointer shadow-lg";
+            btn.className = btn.disabled ? "bg-zinc-800 text-zinc-500 px-8 py-3 rounded-[1.5rem] font-black text-[10px] uppercase" : "bg-emerald-600 text-white px-8 py-3 rounded-[1.5rem] font-black text-[10px] uppercase cursor-pointer";
             actualizarDashboard();
         }
 
@@ -350,22 +522,13 @@
 
         function enviarWS(nom, tel, pag, abo, ns) {
             const vt = ns.length * config.valor;
-            const msg = `*🎫 RECIBO HSA DYNAMICS*%0A👤 *Cliente:* ${nom}%0A🔢 *Tickets:* ${ns.join(", ")}%0A💰 *Total:* $${vt}%0A✅ *Abonado:* $${pag === 'total' ? vt : abo}%0A🍀 ¡Suerte!`;
+            const abonado = (pag === 'total') ? vt : abo;
+            const deuda = vt - abonado;
+            let msg = `*🎫 TICKET HSA DYNAMICS*%0A👤 *Cliente:* ${nom}%0A🔢 *Numero:* ${ns.join(", ")}%0A💰 *Total:* $${vt.toLocaleString()}%0A✅ *Abonado:* $${abonado.toLocaleString()}%0A`;
+            if (deuda > 0) msg += `🚩 *Deuda:* $${deuda.toLocaleString()}%0A`;
+            msg += `%0A*💳 PAGOS:*%0A- Nequi: 3226050197%0A- Daviplata: 3226050197%0A- *Ahorros Bancolombia:* 88263229171%0A- HSA Dynamics te desea 🍀¡Suerte!`;
             window.open(`https://api.whatsapp.com/send?text=${msg}`);
         }
-
-        function exportarExcel() {
-            let csv = "Numero;Cliente;WhatsApp;Estado;Debe\n";
-            Object.keys(rifaDatos).sort((a,b)=>a-b).forEach(n => {
-                const d = rifaDatos[n]; const totalV = d.numerosEnVenta.length * config.valor;
-                csv += `${n};${d.nombre};${d.whatsapp};${d.pago};${totalV-(d.pago==='total'?totalV:d.abonoTotal)}\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const a = document.createElement('a'); a.href = window.URL.createObjectURL(blob);
-            a.download = `Reporte_HSA.csv`; a.click();
-        }
-
-        function resetearSistema() { if(confirm("¿Borrar todo el sorteo?")) { rifaDatos = {}; localStorage.removeItem('rifa_onyx_v21'); generarTabla(); } }
 
         function enviarPendientesWhatsApp() {
             let res = "*🚩 DEUDORES HSA DYNAMICS:*%0A"; let p = new Set();
@@ -378,6 +541,9 @@
             });
             window.open(`https://api.whatsapp.com/send?text=${res}`);
         }
+
+        function resetearSistema() { if(confirm("¿Borrar todo?")) { rifaDatos = {}; localStorage.removeItem('rifa_onyx_v21'); generarTabla(); } }
+        
         inicializar();
     </script>
 </body>
