@@ -16,7 +16,7 @@
         
         #contenedorTabla { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 5px; padding: 12px; background-color: #0a0a0a; border-radius: 15px; border: 1px solid #1a1a1a; width: 100%; }
         
-        .numero-bola { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: all 0.2s ease; font-size: 1.9rem; font-weight: 900; user-select: none; border: 2px solid #1a1a1a; color: #ffffff; position: relative; overflow: hidden; text-align: center; }
+        .numero-bola { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: all 0.2s ease; font-size: 1.7rem; font-weight: 900; user-select: none; border: 2px solid #1a1a1a; color: #ffffff; position: relative; overflow: hidden; text-align: center; }
         .libre { background: linear-gradient(145deg, #064e3b, #022c22); border-color: #059669; } 
         .seleccionado { background: #3b82f6 !important; border-color: #ffffff; transform: scale(1.1); z-index: 10; box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
         .vendido { border-color: #71ef44; color: transparent !important; }
@@ -312,6 +312,16 @@
         font-family: 'Inter', sans-serif;
     `;
 
+    // --- BLOQUE NUEVO: LOGO Y NOMBRE DE EMPRESA ---
+    const branding = document.createElement('div');
+    branding.style.cssText = "display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;";
+    branding.innerHTML = `
+        <img src="https://i.ibb.co/HL9PDYfW/duende.jpg" crossorigin="anonymous" style="width: 300px; height: 300px; border-radius: 20px; border: 2px solid #059669; margin-bottom: 10px; object-fit: cover;">
+        <h1 style="color: white; font-size: 45px; font-weight: 900; margin: 0; letter-spacing: 2px;">HSA <span style="color: #059669;">DYNAMICS</span></h1>
+    `;
+    contenedorTemporal.appendChild(branding);
+    // ----------------------------------------------
+
     const titulo = document.createElement('h2');
     titulo.innerText = document.getElementById('confNombre').value || "NÚMEROS DISPONIBLES";
     titulo.style.cssText = "color: white; font-size: 36px; font-weight: 900; margin-bottom: 40px; text-transform: uppercase; text-align: center; letter-spacing: 2px;";
@@ -328,7 +338,6 @@
 
     const bolasClonadas = tablaClonada.querySelectorAll('.numero-bola');
     bolasClonadas.forEach(b => {
-        // DETECTAMOS EL ESTADO PARA APLICAR EL BORDE CORRECTO
         const esLibre = b.classList.contains('libre');
         
         b.style.cssText = `
@@ -340,7 +349,6 @@
             border-radius: 50%;
             position: relative;
             overflow: hidden;
-            /* --- BORDES LLAMATIVOS RECUPERADOS --- */
             border: 3px solid ${esLibre ? '#059669' : '#71ef44'}; 
             box-shadow: 0 0 10px ${esLibre ? 'rgba(5, 150, 105, 0.3)' : 'rgba(113, 239, 68, 0.2)'};
             background: ${esLibre ? 'linear-gradient(145deg, #064e3b, #022c22)' : '#000'};
@@ -359,7 +367,6 @@
                 line-height: 1;
                 text-align: center;
                 width: 100%;
-                /* Si está vendido, el número es invisible */
                 ${!esLibre ? 'color: transparent !important;' : 'color: white;'}
             `;
         }
