@@ -84,8 +84,11 @@
         <div class="bg-[#0a0a0a] p-6 rounded-3xl border border-white/10 w-full max-w-xs shadow-2xl">
             <h2 class="text-sm font-black text-white uppercase text-center mb-4">Datos del Comprador</h2>
             <div class="space-y-3">
-                <input type="text" id="nombreCliente" class="w-full p-3 rounded-xl text-xs" placeholder="Nombre completo">
-                <input type="tel" id="whatsappCliente" class="w-full p-3 rounded-xl text-xs" placeholder="WhatsApp (Ej: 573...)">
+                <div class="flex gap-2">
+                    <input type="text" id="nombreCliente" class="flex-1 p-3 rounded-xl text-xs" placeholder="Nombre completo">
+                    <button onclick="seleccionarContacto()" class="bg-emerald-600/20 text-emerald-500 border border-emerald-500/30 px-3 rounded-xl text-lg">👤</button>
+                </div>
+                <input type="tel" id="whatsappCliente" class="w-full p-3 rounded-xl text-xs" placeholder="WhatsApp (Opcional)">
                 <select id="estadoPago" onchange="toggleAbono()" class="w-full p-3 rounded-xl text-xs font-bold">
                     <option value="total">PAGÓ TODO 🟢</option>
                     <option value="abono">ABONO PARCIAL 🟡</option>
@@ -135,6 +138,23 @@
             generarTabla();
         }
 
+        // FUNCION PARA SELECCIONAR CONTACTOS DEL CELULAR
+        async function seleccionarContacto() {
+            const props = ['name', 'tel'];
+            const opts = { multiple: false };
+            try {
+                const contacts = await navigator.contacts.select(props, opts);
+                if (contacts.length > 0) {
+                    const contact = contacts[0];
+                    if (contact.name) document.getElementById('nombreCliente').value = contact.name[0];
+                    if (contact.tel) document.getElementById('whatsappCliente').value = contact.tel[0].replace(/\s+/g, '');
+                }
+            } catch (ex) {
+                console.log("Contact Picker no soportado o cancelado.");
+                alert("Usa un navegador móvil moderno para usar esta función.");
+            }
+        }
+
         function generarTabla() {
             const limite = parseInt(config.rango);
             const contenedor = document.getElementById('contenedorTabla');
@@ -146,9 +166,7 @@
                 bola.className = `numero-bola ${info ? 'vendido' : 'libre'}`;
                 if (seleccionados.includes(numStr)) bola.classList.add('seleccionado');
                 bola.dataset.cliente = info ? info.nombre.toLowerCase() : '';
-                
                 bola.innerHTML = `<span class="num-text">${numStr}</span>`;
-
                 if (info) {
                     bola.innerHTML += `<img src="${URL_DUENDE}" crossorigin="anonymous" style="width:100%; height:100%; object-fit:cover; position:absolute; inset:0; border-radius:50%;">`;
                     bola.querySelector('.num-text').style.visibility = 'hidden'; 
@@ -168,88 +186,43 @@
             const contenedor = document.getElementById('contenedorTabla');
             const buscador = document.getElementById('buscador');
             const btn = document.getElementById('btnCompartir');
-            
             const busquedaPrevia = buscador.value;
-            buscador.value = ""; 
-            filtrarNumeros();
-            btn.innerText = "⏳ CAPTURANDO...";
-            btn.disabled = true;
-
+            buscador.value = ""; filtrarNumeros();
+            btn.innerText = "⏳ CAPTURANDO..."; btn.disabled = true;
             const originalStyle = contenedor.style.cssText;
-            
-            contenedor.style.width = "1000px"; 
-            contenedor.style.gridTemplateColumns = "repeat(10, 1fr)";
-            contenedor.style.gap = "15px";
-            contenedor.style.padding = "50px";
-            contenedor.style.display = "grid";
-            contenedor.style.backgroundColor = "#0a0a0a";
-
+            contenedor.style.width = "1000px"; contenedor.style.gridTemplateColumns = "repeat(10, 1fr)";
+            contenedor.style.gap = "15px"; contenedor.style.padding = "50px";
+            contenedor.style.display = "grid"; contenedor.style.backgroundColor = "#0a0a0a";
             const bolas = contenedor.querySelectorAll('.numero-bola');
             bolas.forEach(b => {
-                b.style.display = "flex";
-                b.style.alignItems = "center";
-                b.style.justifyContent = "center";
-                b.style.width = "80px";
-                b.style.height = "80px";
-                b.style.fontSize = "32px";
-                b.style.lineHeight = "80px";
-                
+                b.style.display = "flex"; b.style.alignItems = "center"; b.style.justifyContent = "center";
+                b.style.width = "80px"; b.style.height = "80px"; b.style.fontSize = "32px"; b.style.lineHeight = "80px";
                 const span = b.querySelector('.num-text');
-                if (span) {
-                    span.style.display = "block";
-                    span.style.visibility = "visible";
-                }
+                if (span) { span.style.display = "block"; span.style.visibility = "visible"; }
             });
-
             await new Promise(r => setTimeout(r, 600));
-
             try {
-                const canvas = await html2canvas(contenedor, {
-                    backgroundColor: "#0a0a0a",
-                    scale: 2, 
-                    useCORS: true,
-                    logging: false,
-                    scrollX: 0,
-                    scrollY: -window.scrollY 
-                });
-
-                await new Promise(r => setTimeout(r, 400));
-
+                const canvas = await html2canvas(contenedor, { backgroundColor: "#0a0a0a", scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: -window.scrollY });
                 const dataUrl = canvas.toDataURL("image/png");
                 const blob = await (await fetch(dataUrl)).blob();
                 const file = new File([blob], 'rifa_hsa.png', { type: 'image/png' });
-
                 if (navigator.share) {
-                    await navigator.share({
-                        files: [file],
-                        title: 'HSA Dynamics',
-                        text: `🍀 Números Disponibles - ${config.nombre || 'Sorteo'}`
-                    });
+                    await navigator.share({ files: [file], title: 'HSA Dynamics', text: `🍀 Números Disponibles - ${config.nombre || 'Sorteo'}` });
                 } else {
-                    const link = document.createElement('a');
-                    link.download = `Tickets_HSA.png`;
-                    link.href = dataUrl;
-                    link.click();
+                    const link = document.createElement('a'); link.download = `Tickets_HSA.png`; link.href = dataUrl; link.click();
                 }
-            } catch (e) {
-                console.error("Error:", e);
-            } finally {
-                contenedor.style.cssText = originalStyle;
-                bolas.forEach(b => b.style.cssText = "");
-                buscador.value = busquedaPrevia;
-                filtrarNumeros();
-                btn.innerText = "🟢 Libres";
-                btn.disabled = false;
+            } catch (e) { console.error(e); } 
+            finally {
+                contenedor.style.cssText = originalStyle; bolas.forEach(b => b.style.cssText = "");
+                buscador.value = busquedaPrevia; filtrarNumeros(); btn.innerText = "🟢 Libres"; btn.disabled = false;
             }
         }
 
-        // Lógica de Tooltip corregida para mostrar toda la info de la imagen
         function mostrarTooltip(e, num) {
             const i = rifaDatos[num]; if(!i) return;
             const vt = i.numerosEnVenta.length * parseFloat(config.valor);
             const ab = i.pago === 'total' ? vt : i.abonoTotal;
             const saldo = vt - ab;
-
             tooltip.style.display = 'block';
             tooltip.innerHTML = `
                 <div class="space-y-2">
@@ -259,23 +232,11 @@
                         <p class="text-emerald-500 text-[10px] font-bold">📱 ${i.whatsapp}</p>
                     </div>
                     <div class="border-t border-zinc-800 pt-2 space-y-1">
-                        <div class="flex justify-between text-[11px]">
-                            <span class="text-zinc-400 font-bold">🔢 Tickets:</span>
-                            <span class="text-white font-black">${i.numerosEnVenta.length}</span>
-                        </div>
-                        <div class="flex justify-between text-[11px]">
-                            <span class="text-zinc-400 font-bold">💰 Total:</span>
-                            <span class="text-white font-black">$${vt.toLocaleString()}</span>
-                        </div>
-                        <div class="flex justify-between text-[11px]">
-                            <span class="text-zinc-400 font-bold">✅ Abonado:</span>
-                            <span class="text-emerald-500 font-black">$${ab.toLocaleString()}</span>
-                        </div>
+                        <div class="flex justify-between text-[11px]"><span class="text-zinc-400 font-bold">🔢 Tickets:</span><span class="text-white font-black">${i.numerosEnVenta.length}</span></div>
+                        <div class="flex justify-between text-[11px]"><span class="text-zinc-400 font-bold">💰 Total:</span><span class="text-white font-black">$${vt.toLocaleString()}</span></div>
+                        <div class="flex justify-between text-[11px]"><span class="text-zinc-400 font-bold">✅ Abonado:</span><span class="text-emerald-500 font-black">$${ab.toLocaleString()}</span></div>
                     </div>
-                    <div class="border-t border-zinc-800 pt-2 flex justify-between items-center">
-                        <span class="text-[10px] text-zinc-400 font-black uppercase">🚩 SALDO:</span>
-                        <span class="text-lg font-black ${saldo > 0 ? 'text-rose-500' : 'text-emerald-500'}">$${saldo.toLocaleString()}</span>
-                    </div>
+                    <div class="border-t border-zinc-800 pt-2 flex justify-between items-center"><span class="text-[10px] text-zinc-400 font-black uppercase">🚩 SALDO:</span><span class="text-lg font-black ${saldo > 0 ? 'text-rose-500' : 'text-emerald-500'}">$${saldo.toLocaleString()}</span></div>
                 </div>
             `;
             moverTooltip(e);
@@ -296,8 +257,7 @@
         }
 
         function procesarPagoParcial() {
-            const m = parseFloat(document.getElementById('nuevoAbonoInput').value);
-            if (!m) return;
+            const m = parseFloat(document.getElementById('nuevoAbonoInput').value); if (!m) return;
             const idV = rifaDatos[numeroActivoParaPago].idVenta;
             Object.keys(rifaDatos).forEach(n => {
                 if(rifaDatos[n].idVenta === idV) {
@@ -342,7 +302,7 @@
             const idV = Date.now();
             ns.forEach(n => { rifaDatos[n] = { nombre: nom, whatsapp: tel || "S/N", pago: pag, abonoTotal: abo, numerosEnVenta: ns, idVenta: idV }; });
             guardarLocal();
-            if(ws && tel) enviarWS(nom, tel, pag, abo, ns);
+            if(ws) enviarWS(nom, tel, pag, abo, ns);
             cerrarModal(); seleccionados = []; document.getElementById('countSeleccion').innerText = "0"; generarTabla();
         }
 
@@ -371,8 +331,7 @@
                 if (!p.has(v.idVenta)) {
                     const t = v.numerosEnVenta.length * config.valor;
                     const a = v.pago === 'total' ? t : v.abonoTotal;
-                    r += a; d += (t - a);
-                    p.add(v.idVenta);
+                    r += a; d += (t - a); p.add(v.idVenta);
                 }
             });
             document.getElementById('statRecaudado').innerText = `$${r.toLocaleString()}`;
@@ -392,14 +351,13 @@
         function enviarWS(nom, tel, pag, abo, ns) {
             const vt = ns.length * config.valor;
             const msg = `*🎫 RECIBO HSA DYNAMICS*%0A👤 *Cliente:* ${nom}%0A🔢 *Tickets:* ${ns.join(", ")}%0A💰 *Total:* $${vt}%0A✅ *Abonado:* $${pag === 'total' ? vt : abo}%0A🍀 ¡Suerte!`;
-            window.open(`https://api.whatsapp.com/send?phone=${tel.replace(/\D/g,'')}&text=${msg}`);
+            window.open(`https://api.whatsapp.com/send?text=${msg}`);
         }
 
         function exportarExcel() {
             let csv = "Numero;Cliente;WhatsApp;Estado;Debe\n";
             Object.keys(rifaDatos).sort((a,b)=>a-b).forEach(n => {
-                const d = rifaDatos[n];
-                const totalV = d.numerosEnVenta.length * config.valor;
+                const d = rifaDatos[n]; const totalV = d.numerosEnVenta.length * config.valor;
                 csv += `${n};${d.nombre};${d.whatsapp};${d.pago};${totalV-(d.pago==='total'?totalV:d.abonoTotal)}\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -410,8 +368,7 @@
         function resetearSistema() { if(confirm("¿Borrar todo el sorteo?")) { rifaDatos = {}; localStorage.removeItem('rifa_onyx_v21'); generarTabla(); } }
 
         function enviarPendientesWhatsApp() {
-            let res = "*🚩 DEUDORES HSA DYNAMICS:*%0A";
-            let p = new Set();
+            let res = "*🚩 DEUDORES HSA DYNAMICS:*%0A"; let p = new Set();
             Object.keys(rifaDatos).forEach(n => {
                 const v = rifaDatos[n];
                 if (v.pago !== 'total' && !p.has(v.idVenta)) {
@@ -421,7 +378,6 @@
             });
             window.open(`https://api.whatsapp.com/send?text=${res}`);
         }
-
         inicializar();
     </script>
 </body>
