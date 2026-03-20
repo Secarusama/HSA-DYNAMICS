@@ -647,7 +647,8 @@ function confirmarLiberar() {
         // Creamos el objeto fecha con el ajuste
         fechaMostrar = new Date(fechaAjustada).toLocaleDateString('es-ES', opciones);
     }
-    let msg = `*✨TICKET✨*%0A`;
+    let msg = `*✨ ${nombreSorteo.toUpperCase()} ✨*%0A`;
+    msg += `*✨TICKET✨*%0A`;
     msg += `━━━━━━━━━━━━━━━━━━%0A`;
     msg += `👤 *Nombre:* ${nom.toUpperCase()}%0A`;
     msg += `🗓️ *Fecha:* ${fechaMostrar}%0A`;
