@@ -106,24 +106,29 @@
     </div>
 
     <div id="modalPago" class="hidden fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 z-[10001]">
-        <div class="bg-[#0a0a0a] p-6 rounded-3xl border border-white/10 w-full max-w-xs shadow-2xl">
-            <h2 id="pagoTitulo" class="text-sm font-black text-white uppercase text-center mb-1">Cargando...</h2>
-            <p id="pagoSubtitulo" class="text-[10px] text-zinc-500 text-center mb-4 italic"></p>
-            <div class="bg-zinc-900/50 p-4 rounded-2xl border border-white/5 mb-4 text-center">
-                <p class="text-[9px] text-zinc-500 uppercase font-bold">Resta pagar</p>
-                <p id="pagoDeudaActual" class="text-2xl font-black text-rose-500">$0</p>
-            </div>
-            <div class="space-y-3">
-                <input type="number" id="montoAbonado" class="w-full p-3 rounded-xl border border-yellow-700/50 text-yellow-500 font-bold text-center" placeholder="Monto del abono">
-                <button onclick="procesarPagoParcial()" class="w-full bg-yellow-600 py-3 rounded-xl font-black text-white text-[10px] uppercase">➕ REGISTRAR ABONO</button>
-                <button onclick="procesarPagoTotal()" class="w-full bg-emerald-600 py-3 rounded-xl font-black text-white text-[10px] uppercase">💰 LIQUIDAR DEUDA</button>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="confirmarLiberar()" class="py-3 bg-rose-900/20 text-rose-500 rounded-xl font-bold text-[9px] uppercase border border-rose-900/30">🗑️ LIBERAR</button>
-                    <button onclick="cerrarModalPago()" class="py-3 bg-zinc-800 text-zinc-400 rounded-xl font-bold text-[9px] uppercase border border-white/5">CERRAR</button>
-                </div>
+    <div class="bg-[#0a0a0a] p-6 rounded-3xl border border-white/10 w-full max-w-xs shadow-2xl">
+        <h2 id="pagoTitulo" class="text-sm font-black text-white uppercase text-center mb-1">Cargando...</h2>
+        
+        <div id="pagoSubtitulo" class="flex flex-wrap justify-center gap-2 mb-4 mt-2"></div>
+
+        <div class="bg-zinc-900/50 p-4 rounded-2xl border border-white/5 mb-4 text-center">
+            <p class="text-[9px] text-zinc-500 uppercase font-bold">Debe</p>
+            <p id="pagoDeudaActual" class="text-2xl font-black text-rose-500">$0</p>
+        </div>
+
+        <div class="space-y-3">
+            <input type="number" id="nuevoAbonoInput" class="w-full p-3 rounded-xl border border-yellow-700/50 text-yellow-500 font-bold text-center" placeholder="Monto del abono">
+            
+            <button onclick="procesarPagoParcial()" class="w-full bg-yellow-600 py-3 rounded-xl font-black text-white text-[10px] uppercase">➕ REGISTRAR ABONO</button>
+            <button onclick="procesarPagoTotal()" class="w-full bg-emerald-600 py-3 rounded-xl font-black text-white text-[10px] uppercase">💰 LIQUIDAR DEUDA</button>
+            
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="confirmarLiberar()" class="py-3 bg-rose-900/20 text-rose-500 rounded-xl font-bold text-[9px] uppercase border border-rose-900/30">🗑️ TODO EL GRUPO</button>
+                <button onclick="cerrarModalPago()" class="py-3 bg-zinc-800 text-zinc-400 rounded-xl font-bold text-[9px] uppercase border border-white/5">CERRAR</button>
             </div>
         </div>
     </div>
+</div>
 
     <script>
         const URL_DUENDE = "https://images.weserv.nl/?url=i.ibb.co/HL9PDYfW/duende.jpg";
@@ -417,16 +422,77 @@
     }
 }
         function abrirGestionPago(num) {
-            numeroActivoParaPago = num;
-            const i = rifaDatos[num];
-            const vt = i.numerosEnVenta.length * parseFloat(config.valor);
-            const ab = i.pago === 'total' ? vt : i.abonoTotal;
-            document.getElementById('pagoTitulo').innerText = i.nombre;
-            document.getElementById('pagoSubtitulo').innerText = `Números: ${i.numerosEnVenta.join(", ")}`;
-            document.getElementById('pagoDeudaActual').innerText = `$${(vt - ab).toLocaleString()}`;
-            document.getElementById('modalPago').classList.remove('hidden');
-        }
+    numeroActivoParaPago = num;
+    const i = rifaDatos[num];
+    if (!i) return;
 
+    const vt = i.numerosEnVenta.length * parseFloat(config.valor);
+    const ab = i.pago === 'total' ? vt : (i.abonoTotal || 0);
+    
+    document.getElementById('pagoTitulo').innerText = i.nombre;
+    
+    const contenedorBotones = document.getElementById('pagoSubtitulo');
+    contenedorBotones.innerHTML = ''; 
+    contenedorBotones.className = "flex flex-wrap justify-center gap-2 mb-4 mt-2";
+
+    i.numerosEnVenta.forEach(n => {
+        const btn = document.createElement('button');
+        btn.innerText = n;
+        btn.className = "px-3 py-1.5 bg-zinc-900 text-zinc-300 border border-white/10 rounded-lg font-black text-[11px] hover:bg-rose-600/20 hover:text-rose-500 hover:border-rose-500/50 transition-all cursor-pointer";
+        
+        // Pasamos 'n' correctamente
+        btn.onclick = () => liberarNumeroEspecifico(n);
+        
+        contenedorBotones.appendChild(btn);
+    });
+
+    document.getElementById('pagoDeudaActual').innerText = `$${(vt - ab).toLocaleString()}`;
+    document.getElementById('modalPago').classList.remove('hidden');
+}
+
+function liberarNumeroEspecifico(numParaBorrar) {
+    // 1. Confirmación (Corregido el nombre de la variable aquí)
+    if (!confirm(`⚠️ ¿Liberar solo el número ${numParaBorrar}?`)) return;
+
+    const datos = rifaDatos[numParaBorrar];
+    if (!datos) return;
+
+    const idVentaActual = datos.idVenta;
+
+    // 2. Limpieza de "hermanos"
+    Object.keys(rifaDatos).forEach(n => {
+        if (rifaDatos[n].idVenta === idVentaActual) {
+            rifaDatos[n].numerosEnVenta = rifaDatos[n].numerosEnVenta.filter(num => num !== numParaBorrar);
+        }
+    });
+
+    // 3. Borrar de la base de datos
+    delete rifaDatos[numParaBorrar];
+
+    // 4. Guardar y refrescar
+    guardarLocal();
+    generarTabla();
+
+    // 5. Actualizar el Modal
+    const quedaAlguno = Object.keys(rifaDatos).find(n => rifaDatos[n].idVenta === idVentaActual);
+    if (quedaAlguno) {
+        abrirGestionPago(quedaAlguno); 
+    } else {
+        cerrarModalPago(); 
+    }
+}
+      // Mantenemos esta por si quieres borrar todos los números del cliente de un solo clic
+function confirmarLiberar() {
+    if(confirm("¿Liberar TODOS los números de este cliente?")) {
+        const idV = rifaDatos[numeroActivoParaPago].idVenta;
+        Object.keys(rifaDatos).forEach(n => { 
+            if(rifaDatos[n].idVenta === idV) delete rifaDatos[n]; 
+        });
+        guardarLocal(); 
+        cerrarModalPago(); 
+        generarTabla();
+    }
+}
         function procesarPagoParcial() {
             const m = parseFloat(document.getElementById('nuevoAbonoInput').value); if (!m) return;
             const idV = rifaDatos[numeroActivoParaPago].idVenta;
@@ -662,7 +728,7 @@
     montoAbonado.readOnly = true;            // Bloqueado si es DEBE
     montoAbonado.style.opacity = "0.6";      // Estilo visual de bloqueado
 }
-        
+
         inicializar();
     </script>
 </body>
