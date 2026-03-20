@@ -647,20 +647,20 @@ function confirmarLiberar() {
         // Creamos el objeto fecha con el ajuste
         fechaMostrar = new Date(fechaAjustada).toLocaleDateString('es-ES', opciones);
     }
-    let msg = `*✨Tickt HSA Dynamics✨*%0A`;
+    let msg = `*✨TICKET✨*%0A`;
     msg += `━━━━━━━━━━━━━━━━━━%0A`;
     msg += `👤 *Nombre:* ${nom.toUpperCase()}%0A`;
     msg += `🗓️ *Fecha:* ${fechaMostrar}%0A`;
     msg += `🔢 *N°:* ${ns.join(" ⭐ ")}%0A`;
     msg += `━━━━━━━━━━━━━━━━━━%0A`;
     msg += `💰 *Valor a pagar:* $${vt.toLocaleString()}%0A`;
-    msg += `⚠️ *Favor enviar comprobante de pago.*%0A`;
+    msg += `⚠️ *Favor enviar comprobante.*%0A`;
     msg += `━━━━━━━━━━━━━━━━━━%0A`;
     msg += `*💳 MEDIOS DE PAGO:*%0A`;
     msg += `• Nequi: 3226050197%0A`;
     msg += `• Daviplata: 3226050197%0A`;
     msg += `• Bancolombia: 88263229171%0A`;
-    msg += `%0A🍀 *¡Mucha suerte con HSA Dynamics!*`;
+    msg += `%0A🍀*¡Mucha suerte!🍀*`;
 
     // Abrir WhatsApp con el mensaje formateado
     window.open(`https://api.whatsapp.com/send?text=${msg}`);
