@@ -640,20 +640,12 @@ function confirmarLiberar() {
 
     let msg = `*✨Tickt HSA Dynamics✨*%0A`;
     msg += `━━━━━━━━━━━━━━━━━━%0A`;
-    msg += `👤 *CLIENTE:* ${nom.toUpperCase()}%0A`;
-    msg += `🗓️ *FECHA:* ${fechaSorteo}%0A`;
-    msg += `🔢 *NÚMEROS:* ${ns.join(" - ")}%0A`;
+    msg += `👤 *Nombre:* ${nom.toUpperCase()}%0A`;
+    msg += `🗓️ *Fecha:* ${fechaSorteo}%0A`;
+    msg += `🔢 *N°:* ${ns.join(" ⭐ ")}%0A`;
     msg += `━━━━━━━━━━━━━━━━━━%0A`;
     msg += `💰 *VALOR TOTAL:* $${vt.toLocaleString()}%0A`;
-    msg += `💵 *ABONADO:* $${abonado.toLocaleString()}%0A`;
-
-    if (deuda > 0) {
-        msg += `🚩 *PENDIENTE:* $${deuda.toLocaleString()}%0A`;
-        msg += `⚠️ _Recuerda liquidar antes del sorteo_%0A`;
-    } else {
-        msg += `✅ *ESTADO:* PAGADO TOTAL%0A`;
-    }
-
+    msg += `⚠️ _Recuerda liquidar antes del sorteo_%0A`;
     msg += `━━━━━━━━━━━━━━━━━━%0A`;
     msg += `*💳 MEDIOS DE PAGO:*%0A`;
     msg += `• Nequi: 3226050197%0A`;
