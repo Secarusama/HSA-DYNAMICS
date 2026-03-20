@@ -632,20 +632,29 @@ function confirmarLiberar() {
         }
 
         function enviarWS(nom, tel, pag, abo, ns) {
-    const vt = ns.length * config.valor; // Valor Total
-    const abonado = (pag === 'total') ? vt : abo; // Lo que ya pagó
-    const deuda = vt - abonado; // Lo que resta
-    const fechaSorteo = config.fecha || "Por definir";
-    const nombreSorteo = config.nombre || "Gran Rifa HSA";
-
+    const vt = ns.length * config.valor; 
+    const abonado = (pag === 'total') ? vt : abo; 
+    const deuda = vt - abonado; 
+    
+    let fechaMostrar = config.fecha || "Por definir";
+    
+    if (config.fecha && config.fecha !== "Por definir") {
+        // --- ARREGLO PARA LA FECHA ---
+        // Reemplazamos "-" por "/" para evitar el error de zona horaria (UTC)
+        let fechaAjustada = config.fecha.replace(/-/g, '\/');
+        const opciones = { day: 'numeric', month: 'long', year: 'numeric' };
+        
+        // Creamos el objeto fecha con el ajuste
+        fechaMostrar = new Date(fechaAjustada).toLocaleDateString('es-ES', opciones);
+    }
     let msg = `*✨Tickt HSA Dynamics✨*%0A`;
     msg += `━━━━━━━━━━━━━━━━━━%0A`;
     msg += `👤 *Nombre:* ${nom.toUpperCase()}%0A`;
-    msg += `🗓️ *Fecha:* ${fechaSorteo}%0A`;
+    msg += `🗓️ *Fecha:* ${fechaMostrar}%0A`;
     msg += `🔢 *N°:* ${ns.join(" ⭐ ")}%0A`;
     msg += `━━━━━━━━━━━━━━━━━━%0A`;
-    msg += `💰 *VALOR TOTAL:* $${vt.toLocaleString()}%0A`;
-    msg += `⚠️ _Recuerda liquidar antes del sorteo_%0A`;
+    msg += `💰 *Valor a pagar:* $${vt.toLocaleString()}%0A`;
+    msg += `⚠️ *Favor enviar comprobante de pago.*%0A`;
     msg += `━━━━━━━━━━━━━━━━━━%0A`;
     msg += `*💳 MEDIOS DE PAGO:*%0A`;
     msg += `• Nequi: 3226050197%0A`;
