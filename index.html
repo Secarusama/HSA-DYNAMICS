@@ -84,27 +84,45 @@
     </div>
 
     <div id="modalRegistro" class="hidden fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 z-[10000]">
-        <div class="bg-[#0a0a0a] p-6 rounded-3xl border border-white/10 w-full max-w-xs shadow-2xl">
-            <h2 class="text-sm font-black text-white uppercase text-center mb-4">Datos del Comprador</h2>
-            <div class="space-y-3">
-                <div class="flex gap-2">
-                    <input type="text" id="nombreCliente" class="flex-1 p-3 rounded-xl text-xs" placeholder="Nombre completo">
-                    <button onclick="seleccionarContacto()" class="bg-emerald-600/20 text-emerald-500 border border-emerald-500/30 px-3 rounded-xl text-lg">👤</button>
+    <div class="bg-[#0a0a0a] p-6 rounded-3xl border border-white/10 w-full max-w-xs shadow-2xl">
+        <h2 class="text-sm font-black text-white uppercase text-center mb-4">Datos del Comprador</h2>
+        <div class="space-y-4">
+            <div class="flex gap-2">
+                <input type="text" id="nombreCliente" class="flex-1 p-3 rounded-xl text-xs bg-zinc-900 border border-white/5 text-white" placeholder="Nombre completo">
+                <button onclick="seleccionarContacto()" class="bg-emerald-600/20 text-emerald-500 border border-emerald-500/30 px-3 rounded-xl text-lg">👤</button>
+            </div>
+
+            <input type="tel" id="whatsappCliente" class="w-full p-3 rounded-xl text-xs bg-zinc-900 border border-white/5 text-white" placeholder="WhatsApp (Opcional)">
+            
+            <div class="space-y-2">
+                <p class="text-[9px] text-zinc-500 font-bold uppercase ml-1">Estado del pago:</p>
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="btnEstadoDebe" onclick="seleccionarEstado('nada')" class="py-3 rounded-xl text-[9px] font-black border border-rose-500/30 bg-rose-900/10 text-rose-500 transition-all">DEBE🔴</button>
+                    <button id="btnEstadoPago" onclick="seleccionarEstado('total')" class="py-3 rounded-xl text-[9px] font-black border border-emerald-500/30 bg-emerald-900/10 text-emerald-500 transition-all">PAGÓ🟢</button>
+                    <button type="button" id="btnEstadoAbono" onclick="seleccionarEstado('abono')" 
+    class="py-3 rounded-xl text-[9px] font-black border border-yellow-500/30 bg-yellow-900/10 text-yellow-500 transition-all">
+    ABONO 🟡
+</button>
                 </div>
-                <input type="tel" id="whatsappCliente" class="w-full p-3 rounded-xl text-xs" placeholder="WhatsApp (Opcional)">
-                <select id="estadoPago" onchange="toggleAbono()" class="w-full p-3 rounded-xl text-xs font-bold">
-                    <option value="nada">DEBE🔴</option>
-                    <option value="total">PAGÓ🟢</option>
-                    <option value="abono">ABONO🟡</option>
-                </select>
-                <input type="number" id="montoAbonado" class="hidden w-full p-3 rounded-xl border border-yellow-700/50 text-yellow-500 font-bold text-center" placeholder="Monto del abono">
-                <button onclick="guardarVenta(true)" class="w-full bg-emerald-600 py-3 rounded-xl font-black text-white text-[10px] uppercase">✅ Guardar y Enviar</button>
+            </div>
+
+            <div class="relative">
+                <input type="number" id="montoAbonado" oninput="validarMontoAbono()" 
+                    class="w-full p-3 rounded-xl border border-zinc-800 bg-black text-yellow-500 font-bold text-center text-xs" 
+                    placeholder="Monto del abono $">
+                <span class="absolute left-3 top-3 text-zinc-600 text-[10px]">$</span>
+            </div>
+
+            <input type="hidden" id="estadoPago" value="nada">
+
+            <div class="space-y-2 pt-2">
+                <button onclick="guardarVenta(true)" class="w-full bg-emerald-600 py-3 rounded-xl font-black text-white text-[10px] uppercase shadow-lg shadow-emerald-900/20">✅ Guardar y Enviar</button>
                 <button onclick="guardarVenta(false)" class="w-full bg-zinc-800 py-3 rounded-xl font-black text-zinc-400 text-[10px] uppercase border border-white/5">💾 Guardar</button>
                 <button onclick="cerrarModal()" class="w-full py-2 text-zinc-600 text-[9px] uppercase font-bold">CANCELAR</button>
             </div>
         </div>
     </div>
-
+</div>
     <div id="modalPago" class="hidden fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 z-[10001]">
     <div class="bg-[#0a0a0a] p-6 rounded-3xl border border-white/10 w-full max-w-xs shadow-2xl">
         <h2 id="pagoTitulo" class="text-sm font-black text-white uppercase text-center mb-1">Cargando...</h2>
@@ -148,67 +166,102 @@
 
         // --- PDF AGRUPADO POR CLIENTE ---
         async function exportarPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // 1. Logo y Título de la Empresa
+    try {
+        const img = document.getElementById('logoApp');
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const base64Img = canvas.toDataURL('image/jpeg');
+        doc.addImage(base64Img, 'JPEG', 14, 10, 20, 20);
+    } catch (e) { 
+        console.warn("Logo no disponible"); 
+    }
+
+    doc.setFontSize(18);
+    doc.setTextColor(40);
+    doc.text(`REPORTES HSA DYNAMICS`, 35, 15);
+    doc.text(`SORTEOS DIARIOS`, 35, 22);
+
+    // 2. Recopilación y Cálculo de datos
+    const listaVentas = [];
+    const idsProcesados = new Set();
+    const numerosSorteados = Object.keys(rifaDatos).sort((a, b) => a - b);
+
+    numerosSorteados.forEach(n => {
+        const d = rifaDatos[n];
+        if (!idsProcesados.has(d.idVenta)) {
+            const vTicket = parseFloat(config.valor) || 0;
+            const cantidad = d.numerosEnVenta.length;
+            const totalVenta = cantidad * vTicket;
             
-            try {
-                const img = document.getElementById('logoApp');
-                const canvas = document.createElement('canvas');
-                canvas.width = img.naturalWidth;
-                canvas.height = img.naturalHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                const base64Img = canvas.toDataURL('image/jpeg');
-                doc.addImage(base64Img, 'JPEG', 14, 10, 20, 20);
-            } catch (e) { console.warn("Logo no disponible"); }
+            const abonado = d.pago === 'total' ? totalVenta : (parseFloat(d.abonoTotal) || 0);
+            const deuda = totalVenta - abonado;
 
-            doc.setFontSize(18);
-            doc.text(`REPORTES HSA DYNAMICS`, 40, 20);
-            doc.setFontSize(10);
-            doc.text(`Sorteo: ${config.nombre || 'N/A'}`, 40, 26);
-            doc.text(`Fecha: ${config.fecha || 'N/A'}`, 40, 31);
-
-            const filas = [];
-            const idsProcesados = new Set();
-            const numerosSorteados = Object.keys(rifaDatos).sort((a, b) => a - b);
-
-            numerosSorteados.forEach(n => {
-                const d = rifaDatos[n];
-                // Solo procesamos una vez cada grupo de venta (idVenta)
-                if (!idsProcesados.has(d.idVenta)) {
-                    const vTicket = parseFloat(config.valor) || 0;
-                    const cantidad = d.numerosEnVenta.length;
-                    const totalVenta = cantidad * vTicket;
-                    const abonado = d.pago === 'total' ? totalVenta : (d.abonoTotal || 0);
-                    const deuda = totalVenta - abonado;
-
-                    filas.push([
-                        d.numerosEnVenta.join(", "), // Números comprados separados por coma
-                        `$${vTicket.toLocaleString()}`,
-                        d.nombre,
-                        `$${abonado.toLocaleString()}`,
-                        `$${deuda.toLocaleString()}`,
-                        d.whatsapp || "S/N"
-                    ]);
-                    idsProcesados.add(d.idVenta);
-                }
+            listaVentas.push({
+                numeros: d.numerosEnVenta.join(", "),
+                valorUn: vTicket,
+                nombre: d.nombre,
+                abonado: abonado,
+                deuda: deuda, // Este valor define el color
+                whatsapp: d.whatsapp || "S/N"
             });
-
-            doc.autoTable({
-                startY: 40,
-                head: [['Números', 'Valor Un.', 'Cliente', 'Abono', 'Deuda', 'Celular']],
-                body: filas,
-                theme: 'grid',
-                headStyles: { fillGray: [20, 20, 20], textColor: 255 },
-                styles: { fontSize: 8 },
-                columnStyles: {
-                    0: { cellWidth: 35 }, // Columna de números más ancha
-                    2: { fontStyle: 'bold' }
-                }
-            });
-
-            doc.save(`Reporte_HSA.pdf`);
+            idsProcesados.add(d.idVenta);
         }
+    });
+
+    // 3. LOGICA DE ORDENAMIENTO (De mayor deuda a menor deuda)
+    listaVentas.sort((a, b) => b.deuda - a.deuda);
+
+    const filas = listaVentas.map(item => [
+        item.numeros,
+        `$${item.valorUn.toLocaleString()}`,
+        item.nombre,
+        `$${item.abonado.toLocaleString()}`,
+        `$${item.deuda.toLocaleString()}`,
+        item.whatsapp
+    ]);
+
+    // 4. Generar la Tabla con resaltado condicional
+    doc.autoTable({
+        startY: 40,
+        head: [['Números', 'Valor Un.', 'Cliente', 'Abono', 'Deuda', 'Celular']],
+        body: filas,
+        theme: 'grid',
+        headStyles: { fillColor: [20, 20, 20], textColor: 255 },
+        styles: { fontSize: 10 },
+        columnStyles: {
+            0: { cellWidth: 35 }, 
+            2: { fontStyle: 'bold' },
+            4: { fontStyle: 'bold' }
+        },
+        // --- ESTA ES LA PARTE QUE PINTA LA FILA DE ROJO ---
+        didParseCell: function(data) {
+            // Verificamos si es una celda del cuerpo (no el encabezado)
+            if (data.section === 'body') {
+                // La deuda está en la columna índice 4 de nuestra lista original (item.deuda)
+                // Obtenemos el objeto de la fila actual de nuestra listaVentas ordenada
+                const filaActual = listaVentas[data.row.index];
+                
+                if (filaActual && filaActual.deuda > 0) {
+                    // Pintamos el fondo de la celda de un rojo suave para que se lea el texto
+                    data.cell.styles.fillColor = [255, 230, 230]; 
+                    // Opcional: poner el texto de la deuda en rojo fuerte
+                    if (data.column.index === 4) {
+                        data.cell.styles.textColor = [200, 0, 0];
+                    }
+                }
+            }
+        }
+    });
+
+    doc.save(`Reporte_Cobro_HSA.pdf`);
+}
 
         // --- TOOLTIP ---
         function mostrarTooltip(e, num) {
@@ -542,27 +595,65 @@ function confirmarLiberar() {
             cerrarModal(); seleccionados = []; document.getElementById('countSeleccion').innerText = "0"; generarTabla();
         }
 
-        function toggleAbono() {
-    const estado = document.getElementById('estadoPago').value;
-    const campoAbono = document.getElementById('montoAbonado');
-    const totalVenta = seleccionados.length * parseFloat(config.valor || 0);
+        // 1. Maneja el clic en los 3 botones nuevos
+function seleccionarEstado(estado) {
+    const btnDebe = document.getElementById('btnEstadoDebe');
+    const btnPago = document.getElementById('btnEstadoPago');
+    const btnAbono = document.getElementById('btnEstadoAbono');
+    const campoMonto = document.getElementById('montoAbonado');
+    const inputEstadoOculto = document.getElementById('estadoPago');
     
-    // Aseguramos que SIEMPRE sea visible (quitamos hidden por si acaso)
-    campoAbono.classList.remove('hidden'); 
+    const totalVenta = seleccionados.length * parseFloat(config.valor || 0);
 
-    if (estado === 'nada') { // DEBE 🔴
-        campoAbono.value = 0;
-        campoAbono.readOnly = true;
-        campoAbono.style.opacity = "0.6";
-    } else if (estado === 'total') { // PAGÓ 🟢
-        campoAbono.value = totalVenta;
-        campoAbono.readOnly = true;
-        campoAbono.style.opacity = "0.6";
-    } else if (estado === 'abono') { // ABONO 🟡
-        campoAbono.value = '';
-        campoAbono.readOnly = false;
-        campoAbono.style.opacity = "1";
-        campoAbono.focus();
+    inputEstadoOculto.value = estado;
+
+    // Limpiar selección visual
+    [btnDebe, btnPago, btnAbono].forEach(b => {
+        b.classList.remove('ring-2', 'ring-white', 'scale-105', 'bg-opacity-50');
+    });
+
+    if (estado === 'nada') {
+        campoMonto.value = 0;
+        campoMonto.readOnly = true;
+        campoMonto.style.opacity = "0.6";
+        btnDebe.classList.add('ring-2', 'ring-white', 'scale-105', 'bg-opacity-50');
+    } 
+    else if (estado === 'total') {
+        campoMonto.value = totalVenta;
+        campoMonto.readOnly = true;
+        campoMonto.style.opacity = "0.6";
+        btnPago.classList.add('ring-2', 'ring-white', 'scale-105', 'bg-opacity-50');
+    } 
+    else if (estado === 'abono') {
+        // ACTIVACIÓN DEL CAMPO
+        campoMonto.readOnly = false; 
+        campoMonto.disabled = false; // Asegura que sea editable
+        campoMonto.style.opacity = "1";
+        btnAbono.classList.add('ring-2', 'ring-white', 'scale-105', 'bg-opacity-50');
+        
+        // Limpiar el 0 para escribir rápido
+        if (parseFloat(campoMonto.value) === 0) campoMonto.value = '';
+        
+        // Pequeño retraso para asegurar que el teclado suba en móviles
+        setTimeout(() => campoMonto.focus(), 50);
+    }
+}
+// 2. Activa/Desactiva el botón de abono según el número que escribas
+function validarMontoAbono() {
+    const campoMonto = document.getElementById('montoAbonado');
+    const btnAbono = document.getElementById('btnEstadoAbono');
+    const valor = parseFloat(campoMonto.value) || 0;
+
+    if (valor > 0) {
+        // Si hay plata, el botón se ve "encendido"
+        btnAbono.classList.remove('opacity-30', 'cursor-not-allowed');
+    } else {
+        // Si está en 0, se ve "apagado" pero SIGUE FUNCIONANDO el clic
+        btnAbono.classList.add('opacity-30', 'cursor-not-allowed');
+        
+        if (document.getElementById('estadoPago').value === 'abono') {
+            seleccionarEstado('nada');
+        }
     }
 }
         function cerrarModal() { 
@@ -714,19 +805,17 @@ function confirmarLiberar() {
     // 1. Muestra el modal de registro
     document.getElementById('modalRegistro').classList.remove('hidden'); 
     
-    // 2. Referencias a los campos
-    const estadoPago = document.getElementById('estadoPago');
-    const montoAbonado = document.getElementById('montoAbonado');
-    const totalVenta = seleccionados.length * parseFloat(config.valor || 0);
+    // 2. Reiniciamos los campos de texto
+    document.getElementById('nombreCliente').value = '';
+    document.getElementById('whatsappCliente').value = '';
 
-    // 3. Configuración que pediste: Siempre DEBE por defecto
-    estadoPago.value = 'nada'; 
-    
-    // 4. Configuración del Abono: Visible y en 0
-    montoAbonado.classList.remove('hidden'); // Asegura visibilidad
-    montoAbonado.value = 0;                  // Valor inicial 0
-    montoAbonado.readOnly = true;            // Bloqueado si es DEBE
-    montoAbonado.style.opacity = "0.6";      // Estilo visual de bloqueado
+    // 3. Activamos el estado "DEBE" por defecto usando la nueva lógica de botones
+    // Esto marcará el botón rojo, pondrá el monto en 0 y bloqueará el input.
+    seleccionarEstado('nada'); 
+
+    // 4. Forzamos la validación del botón de Abono 
+    // Para que empiece deshabilitado (ya que el monto es 0)
+    validarMontoAbono();
 }
 
         inicializar();
