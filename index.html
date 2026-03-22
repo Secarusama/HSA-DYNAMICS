@@ -1,27 +1,28 @@
 <!DOCTYPE html>
 <html lang="es">
+<head> <meta charset="UTF-8">
   <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSy...", // Tu clave
-    authDomain: "rifasweb-f187a.firebaseapp.com",
-    databaseURL: "https://rifasweb-f187a-default-rtdb.firebaseio.com",
-    projectId: "rifasweb-f187a",
-    storageBucket: "rifasweb-f187a.appspot.com",
-    messagingSenderId: "305244519965",
-    appId: "1:305244519965:web:8e3d2319f688e154432104"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSy...", // Tu clave real
+      authDomain: "rifasweb-f187a.firebaseapp.com",
+      databaseURL: "https://rifasweb-f187a-default-rtdb.firebaseio.com",
+      projectId: "rifasweb-f187a",
+      storageBucket: "rifasweb-f187a.appspot.com",
+      messagingSenderId: "305244519965",
+      appId: "1:305244519965:web:8e3d2319f688e154432104"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const rifaRef = ref(db, 'rifa_compartida');
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const rifaRef = ref(db, 'rifa_compartida');
 
-  // Creamos dos "puentes" para tu lógica de abajo
-  window.enviarANube = (datos) => set(rifaRef, datos);
-  window.recibirDeNube = (callback) => onValue(rifaRef, (s) => callback(s.val()));
-</script>
+    // ESTOS NOMBRES SON LOS QUE TU LÓGICA BUSCA ABAJO
+    window.escucharNube = (callback) => onValue(rifaRef, (s) => callback(s.val()));
+    window.guardarEnNube = (datos) => set(rifaRef, datos);
+  </script>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -714,12 +715,12 @@ function validarMontoAbono() {
     montoAbonado.classList.remove('hidden'); // Siempre visible al cerrar/abrir
 }
         function guardarLocal() {
-    // 1. Guardamos en el teléfono (como ya hacías)
+    // 1. Guardar en el navegador (tu lógica actual)
     localStorage.setItem('rifa_onyx_v21', JSON.stringify(rifaDatos));
 
-    // 2. NUEVO: Enviamos a la nube para los demás
-    if (window.enviarANube) {
-        window.enviarANube(rifaDatos);
+    // 2. NUEVO: Enviar a Firebase para que otros lo vean
+    if (window.guardarEnNube) {
+        window.guardarEnNube(rifaDatos);
     }
 }
         
