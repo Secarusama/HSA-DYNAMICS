@@ -5,23 +5,22 @@
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
   const firebaseConfig = {
-    apiKey: "AIzaSy...", // (Aquí deja los datos que copiaste)
+    apiKey: "AIzaSy...", // Tu clave
     authDomain: "rifasweb-f187a.firebaseapp.com",
     databaseURL: "https://rifasweb-f187a-default-rtdb.firebaseio.com",
     projectId: "rifasweb-f187a",
     storageBucket: "rifasweb-f187a.appspot.com",
-    messagingSenderId: "...",
-    appId: "..."
+    messagingSenderId: "305244519965",
+    appId: "1:305244519965:web:8e3d2319f688e154432104"
   };
 
-  // Inicializar Firebase
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const rifaRef = ref(db, 'rifa_compartida');
 
-  // Hacer funciones disponibles para el resto del código
-  window.guardarEnNube = (datos) => set(rifaRef, datos);
-  window.escucharNube = (callback) => onValue(rifaRef, (snap) => callback(snap.val()));
+  // Creamos dos "puentes" para tu lógica de abajo
+  window.enviarANube = (datos) => set(rifaRef, datos);
+  window.recibirDeNube = (callback) => onValue(rifaRef, (s) => callback(s.val()));
 </script>
 <head>
     <meta charset="UTF-8">
@@ -180,22 +179,28 @@
         const tooltip = document.getElementById('tooltipGlobal');
 
         function inicializar() {
-    // Si hay conexión, trae los datos de la nube
+    // 1. CARGA DESDE LA NUBE (Firebase)
+    // Usamos el "puente" que creamos arriba en el <head>
     if (window.escucharNube) {
         window.escucharNube((data) => {
             if (data) {
-                rifaDatos = data;
-                generarTabla(); // Actualiza la pantalla de todos automáticamente
+                // Actualiza tus datos globales con lo que viene de internet
+                rifaDatos = data; 
+                // Redibuja la tabla para que todos vean los cambios al instante
+                generarTabla(); 
             }
         });
     }
 
-    // Cargar nombres y fecha del sorteo
+    // 2. CARGA TU CONFIGURACIÓN (Tu lógica original)
+    // Esto mantiene los nombres, precios y fechas que tú definiste
     document.getElementById('confNombre').value = config.nombre;
     document.getElementById('confValor').value = config.valor;
     document.getElementById('confFecha').value = config.fecha;
     document.getElementById('rangoRifa').value = config.rango;
-    
+
+    // 3. DIBUJO INICIAL
+    // Genera la tabla por primera vez al abrir la página
     generarTabla();
 }
 
@@ -709,12 +714,13 @@ function validarMontoAbono() {
     montoAbonado.classList.remove('hidden'); // Siempre visible al cerrar/abrir
 }
         function guardarLocal() {
-    // Esto envía los datos a Internet (Firebase) para que otros los vean
-    if (window.guardarEnNube) {
-        window.guardarEnNube(rifaDatos);
-    }
-    // Guarda una copia de respaldo en tu celular/PC
+    // 1. Guardamos en el teléfono (como ya hacías)
     localStorage.setItem('rifa_onyx_v21', JSON.stringify(rifaDatos));
+
+    // 2. NUEVO: Enviamos a la nube para los demás
+    if (window.enviarANube) {
+        window.enviarANube(rifaDatos);
+    }
 }
         
         function validarConfig() {
@@ -860,6 +866,7 @@ function validarMontoAbono() {
 }
 
         inicializar();
+      window.onload = inicializar;
     </script>
 </body>
 </html>
