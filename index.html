@@ -1,5 +1,28 @@
 <!DOCTYPE html>
 <html lang="es">
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSy...", // (Aquí deja los datos que copiaste)
+    authDomain: "rifasweb-f187a.firebaseapp.com",
+    databaseURL: "https://rifasweb-f187a-default-rtdb.firebaseio.com",
+    projectId: "rifasweb-f187a",
+    storageBucket: "rifasweb-f187a.appspot.com",
+    messagingSenderId: "...",
+    appId: "..."
+  };
+
+  // Inicializar Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const rifaRef = ref(db, 'rifa_compartida');
+
+  // Hacer funciones disponibles para el resto del código
+  window.guardarEnNube = (datos) => set(rifaRef, datos);
+  window.escucharNube = (callback) => onValue(rifaRef, (snap) => callback(snap.val()));
+</script>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -157,12 +180,24 @@
         const tooltip = document.getElementById('tooltipGlobal');
 
         function inicializar() {
-            document.getElementById('confNombre').value = config.nombre;
-            document.getElementById('confValor').value = config.valor;
-            document.getElementById('confFecha').value = config.fecha;
-            document.getElementById('rangoRifa').value = config.rango;
-            generarTabla();
-        }
+    // Si hay conexión, trae los datos de la nube
+    if (window.escucharNube) {
+        window.escucharNube((data) => {
+            if (data) {
+                rifaDatos = data;
+                generarTabla(); // Actualiza la pantalla de todos automáticamente
+            }
+        });
+    }
+
+    // Cargar nombres y fecha del sorteo
+    document.getElementById('confNombre').value = config.nombre;
+    document.getElementById('confValor').value = config.valor;
+    document.getElementById('confFecha').value = config.fecha;
+    document.getElementById('rangoRifa').value = config.rango;
+    
+    generarTabla();
+}
 
         // --- PDF AGRUPADO POR CLIENTE ---
         async function exportarPDF() {
@@ -673,8 +708,14 @@ function validarMontoAbono() {
     montoAbonado.style.opacity = "0.6";
     montoAbonado.classList.remove('hidden'); // Siempre visible al cerrar/abrir
 }
-        function guardarLocal() { localStorage.setItem('rifa_onyx_v21', JSON.stringify(rifaDatos)); }
-        function cambiarRango() { config.rango = document.getElementById('rangoRifa').value; validarConfig(); generarTabla(); }
+        function guardarLocal() {
+    // Esto envía los datos a Internet (Firebase) para que otros los vean
+    if (window.guardarEnNube) {
+        window.guardarEnNube(rifaDatos);
+    }
+    // Guarda una copia de respaldo en tu celular/PC
+    localStorage.setItem('rifa_onyx_v21', JSON.stringify(rifaDatos));
+}
         
         function validarConfig() {
     config.nombre = document.getElementById('confNombre').value;
