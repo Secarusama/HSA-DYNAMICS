@@ -179,21 +179,38 @@ window.escucharNube = (callback) => onValue(rifaRef, (snap) => callback(snap.val
         const tooltip = document.getElementById('tooltipGlobal');
 
         function inicializar() {
-    // Si hay conexión, trae los datos de la nube
     if (window.escucharNube) {
         window.escucharNube((data) => {
             if (data) {
-                rifaDatos = data;
-                generarTabla(); // Esto actualiza a todos los usuarios
+                // Verificamos si la data trae la estructura nueva o la antigua
+                // Si existe 'tickets' o 'ajustes', es el formato nuevo
+                if (data.tickets || data.ajustes) {
+                    if (data.tickets) rifaDatos = data.tickets;
+                    if (data.ajustes) {
+                        config = data.ajustes;
+                        // Sincronizamos los textos para que cambien en todas las pantallas
+                        document.getElementById('confNombre').value = config.nombre || '';
+                        document.getElementById('confValor').value = config.valor || '';
+                        document.getElementById('confFecha').value = config.fecha || '';
+                        document.getElementById('rangoRifa').value = config.rango || '100';
+                    }
+                } else {
+                    // Si no tiene esas etiquetas, asumimos que toda la 'data' son los tickets
+                    rifaDatos = data;
+                }
+                
+                // IMPORTANTE: Solo generamos tabla si hay datos para mostrar
+                generarTabla();
+                actualizarDashboard();
             }
         });
     }
 
-    // Tu lógica de los inputs (No la toques, déjala como está)
-    document.getElementById('confNombre').value = config.nombre;
-    document.getElementById('confValor').value = config.valor;
-    document.getElementById('confFecha').value = config.fecha;
-    document.getElementById('rangoRifa').value = config.rango;
+    // Carga inicial desde los inputs
+    document.getElementById('confNombre').value = config.nombre || '';
+    document.getElementById('confValor').value = config.valor || '';
+    document.getElementById('confFecha').value = config.fecha || '';
+    document.getElementById('rangoRifa').value = config.rango || '100';
     
     generarTabla();
     validarMontoAbono();
@@ -599,14 +616,6 @@ function confirmarLiberar() {
             guardarLocal(); cerrarModalPago(); generarTabla();
         }
 
-        function confirmarLiberar() {
-            if(confirm("¿Liberar estos números?")) {
-                const idV = rifaDatos[numeroActivoParaPago].idVenta;
-                Object.keys(rifaDatos).forEach(n => { if(rifaDatos[n].idVenta === idV) delete rifaDatos[n]; });
-                guardarLocal(); cerrarModalPago(); generarTabla();
-            }
-        }
-
         function cerrarModalPago() { document.getElementById('modalPago').classList.add('hidden'); }
         function manejarSeleccion(num, el) {
             const idx = seleccionados.indexOf(num);
@@ -709,12 +718,15 @@ function validarMontoAbono() {
     montoAbonado.classList.remove('hidden'); // Siempre visible al cerrar/abrir
 }
         function guardarLocal() {
-    // 1. Guarda en el celular (Como siempre)
     localStorage.setItem('rifa_onyx_v21', JSON.stringify(rifaDatos));
+    localStorage.setItem('rifa_conf_v21', JSON.stringify(config));
 
-    // 2. Manda por el cable correcto a Internet
     if (window.guardarEnNube) {
-        window.guardarEnNube(rifaDatos); 
+        // Enviamos el paquete con los nombres que la función inicializar espera
+        window.guardarEnNube({
+            tickets: rifaDatos,
+            ajustes: config
+        });
     }
 }
         
@@ -723,11 +735,13 @@ function validarMontoAbono() {
     config.valor = document.getElementById('confValor').value;
     config.fecha = document.getElementById('confFecha').value;
     config.rango = document.getElementById('rangoRifa').value;
+    
+    // Guardamos localmente
     localStorage.setItem('rifa_conf_v21', JSON.stringify(config));
     
     const btn = document.getElementById('btnVender');
     
-    // Si hay números seleccionados, el botón SE ACTIVA sí o sí
+    // Lógica del botón (se mantiene igual)
     if (seleccionados.length > 0) {
         btn.disabled = false;
         btn.classList.remove('bg-zinc-800', 'text-zinc-500');
@@ -737,7 +751,13 @@ function validarMontoAbono() {
         btn.classList.add('bg-zinc-800', 'text-zinc-500');
         btn.classList.remove('bg-emerald-600', 'text-white', 'cursor-pointer');
     }
+
     actualizarDashboard();
+
+    // CLAVE: Sincronizar con la nube para que otros vean los cambios en el texto
+    if (typeof guardarLocal === "function") {
+        guardarLocal();
+    }
 }
 
         function actualizarDashboard() {
