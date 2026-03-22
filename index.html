@@ -183,38 +183,20 @@ window.escucharNube = (callback) => onValue(rifaRef, (snap) => callback(snap.val
     if (window.escucharNube) {
         window.escucharNube((data) => {
             if (data) {
-                // EXPLICACIÓN: Si lo que viene de la nube trae "ajustes", los cargamos
-                if (data.ajustes) {
-                    config = data.ajustes;
-                    rifaDatos = data.numeros || {};
-                    
-                    // Esto actualiza los textos de arriba (Título, Valor, Fecha)
-                    actualizarTextos(); 
-                } else {
-                    // Si viene el formato viejo, solo cargamos los números
-                    rifaDatos = data;
-                }
-                
-                // Actualizamos los cuadritos de los números
-                generarTabla(); 
+                rifaDatos = data;
+                generarTabla(); // Esto actualiza a todos los usuarios
             }
         });
     }
 
-    // Tu lógica de los inputs (Se mantiene igual)
+    // Tu lógica de los inputs (No la toques, déjala como está)
     document.getElementById('confNombre').value = config.nombre;
     document.getElementById('confValor').value = config.valor;
     document.getElementById('confFecha').value = config.fecha;
     document.getElementById('rangoRifa').value = config.rango;
     
-    // Dibujo inicial
     generarTabla();
     validarMontoAbono();
-}
-      function actualizarTextos() {
-    document.getElementById('tituloRifa').innerText = config.nombre;
-    document.getElementById('valorRifa').innerText = `Valor: ${config.valor}`;
-    document.getElementById('fechaRifa').innerText = `Fecha: ${config.fecha}`;
 }
 
         // --- PDF AGRUPADO POR CLIENTE ---
@@ -727,19 +709,13 @@ function validarMontoAbono() {
     montoAbonado.classList.remove('hidden'); // Siempre visible al cerrar/abrir
 }
         function guardarLocal() {
-    // 1. Guardar en el celular (como siempre)
+    // 1. Guarda en el celular (Como siempre)
     localStorage.setItem('rifa_onyx_v21', JSON.stringify(rifaDatos));
-    localStorage.setItem('rifa_config_v21', JSON.stringify(config));
 
-    // 2. ENVIAR TODO A LA NUBE (Números + Configuración)
+    // 2. Manda por el cable correcto a Internet
     if (window.guardarEnNube) {
-        window.guardarEnNube({
-            numeros: rifaDatos,
-            ajustes: config
-        });
+        window.guardarEnNube(rifaDatos); 
     }
-    
-    generarTabla();
 }
         
         function validarConfig() {
