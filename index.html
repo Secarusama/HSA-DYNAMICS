@@ -182,6 +182,7 @@ window.escucharNube = (callback) => onValue(rifaRef, (snap) => callback(snap.val
     if (window.escucharNube) {
         window.escucharNube((data) => {
             if (data) {
+                rifaDatos = {};
                 // Verificamos si la data trae la estructura nueva o la antigua
                 // Si existe 'tickets' o 'ajustes', es el formato nuevo
                 if (data.tickets || data.ajustes) {
@@ -376,14 +377,34 @@ window.escucharNube = (callback) => onValue(rifaRef, (snap) => callback(snap.val
             const limite = parseInt(config.rango);
             const contenedor = document.getElementById('contenedorTabla');
             contenedor.innerHTML = '';
+            
             for (let i = 0; i < limite; i++) {
                 const numStr = i.toString().padStart(limite === 1000 ? 3 : 2, '0');
                 const info = rifaDatos[numStr];
                 const bola = document.createElement('div');
-                bola.className = `numero-bola ${info ? 'vendido' : 'libre'}`;
+                
+                // LÓGICA DE COLOR DE BORDE DINÁMICO
+                let claseEstado = 'libre';
+                let estiloBorde = '';
+
+                if (info) {
+                    const vt = info.numerosEnVenta.length * (parseFloat(config.valor) || 0);
+                    const ab = info.pago === 'total' ? vt : (info.abonoTotal || 0);
+                    const saldo = vt - ab;
+
+                    claseEstado = 'vendido';
+                    // Si el saldo es 0, borde verde. Si es 1 o más, borde rojo.
+                    estiloBorde = saldo === 0 ? 'border-color: #71ef44 !important;' : 'border-color: #ff4444 !important;';
+                }
+
+                bola.className = `numero-bola ${claseEstado}`;
+                if (estiloBorde) bola.style = estiloBorde; // Aplicamos el color de borde aquí
+
                 if (seleccionados.includes(numStr)) bola.classList.add('seleccionado');
+                
                 bola.dataset.cliente = info ? info.nombre.toLowerCase() : '';
                 bola.innerHTML = `<span class="num-text">${numStr}</span>`;
+
                 if (info) {
                     bola.innerHTML += `<img src="${URL_DUENDE}" crossorigin="anonymous" style="width:100%; height:100%; object-fit:cover; position:absolute; inset:0; border-radius:50%;">`;
                     bola.onclick = () => abrirGestionPago(numStr);
@@ -397,7 +418,6 @@ window.escucharNube = (callback) => onValue(rifaRef, (snap) => callback(snap.val
             }
             actualizarDashboard();
         }
-
         async function compartirDisponibles() {
     const btn = document.getElementById('btnCompartir');
     const textoOriginal = btn.innerText;
@@ -861,8 +881,26 @@ function validarMontoAbono() {
     window.open(`https://api.whatsapp.com/send?text=${msg}`);
 }
 
-        function resetearSistema() { if(confirm("¿Borrar todo?")) { rifaDatos = {}; localStorage.removeItem('rifa_onyx_v21'); generarTabla(); } }
-      
+        function resetearSistema() { 
+    if(confirm("⚠️ ¿BORRAR TODAS LAS VENTAS? Esto limpiará las pantallas de todos los usuarios.")) { 
+        // 1. Limpiamos objeto y memoria local
+        rifaDatos = {}; 
+        localStorage.removeItem('rifa_onyx_v21'); 
+        
+        // 2. IMPORTANTE: Enviamos un objeto vacío a la nube, NO un null
+        // Esto evita que la lógica de Firebase se rompa en otros navegadores
+        if (window.guardarEnNube) {
+            window.guardarEnNube({
+                tickets: {}, 
+                ajustes: config // Mantenemos el nombre de la rifa y precio
+            });
+        }
+        
+        // 3. Refrescamos visualmente
+        generarTabla();
+        actualizarDashboard();
+    } 
+}
       function abrirModalMulti() { 
     // 1. Muestra el modal de registro
     document.getElementById('modalRegistro').classList.remove('hidden'); 
