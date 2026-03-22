@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
-<head> <meta charset="UTF-8">
+<head>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSy...", // Tu clave real
-      authDomain: "rifasweb-f187a.firebaseapp.com",
-      databaseURL: "https://rifasweb-f187a-default-rtdb.firebaseio.com",
-      projectId: "rifasweb-f187a",
-      storageBucket: "rifasweb-f187a.appspot.com",
+      authDomain: "rifasweb-6d2ab.firebaseapp.com",
+      databaseURL: "https://rifasweb-6d2ab-default-rtdb.firebaseio.com",
+      projectId: "rifasweb-6d2ab",
+      storageBucket: "rifasweb-6d2ab.appspot.com",
       messagingSenderId: "305244519965",
       appId: "1:305244519965:web:8e3d2319f688e154432104"
     };
@@ -20,10 +20,9 @@
     const rifaRef = ref(db, 'rifa_compartida');
 
     // ESTOS NOMBRES SON LOS QUE TU LÓGICA BUSCA ABAJO
-    window.escucharNube = (callback) => onValue(rifaRef, (s) => callback(s.val()));
     window.guardarEnNube = (datos) => set(rifaRef, datos);
+window.escucharNube = (callback) => onValue(rifaRef, (snap) => callback(snap.val()));
   </script>
-<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HSA Dynamics - Gestión de Rifas</title>
@@ -180,29 +179,24 @@
         const tooltip = document.getElementById('tooltipGlobal');
 
         function inicializar() {
-    // 1. CARGA DESDE LA NUBE (Firebase)
-    // Usamos el "puente" que creamos arriba en el <head>
+    // Si hay conexión, trae los datos de la nube
     if (window.escucharNube) {
         window.escucharNube((data) => {
             if (data) {
-                // Actualiza tus datos globales con lo que viene de internet
-                rifaDatos = data; 
-                // Redibuja la tabla para que todos vean los cambios al instante
-                generarTabla(); 
+                rifaDatos = data;
+                generarTabla(); // Esto actualiza a todos los usuarios
             }
         });
     }
 
-    // 2. CARGA TU CONFIGURACIÓN (Tu lógica original)
-    // Esto mantiene los nombres, precios y fechas que tú definiste
+    // Tu lógica de los inputs (No la toques, déjala como está)
     document.getElementById('confNombre').value = config.nombre;
     document.getElementById('confValor').value = config.valor;
     document.getElementById('confFecha').value = config.fecha;
     document.getElementById('rangoRifa').value = config.rango;
-
-    // 3. DIBUJO INICIAL
-    // Genera la tabla por primera vez al abrir la página
+    
     generarTabla();
+    validarMontoAbono();
 }
 
         // --- PDF AGRUPADO POR CLIENTE ---
@@ -715,12 +709,12 @@ function validarMontoAbono() {
     montoAbonado.classList.remove('hidden'); // Siempre visible al cerrar/abrir
 }
         function guardarLocal() {
-    // 1. Guardar en el navegador (tu lógica actual)
+    // 1. Guarda en el celular (Como siempre)
     localStorage.setItem('rifa_onyx_v21', JSON.stringify(rifaDatos));
 
-    // 2. NUEVO: Enviar a Firebase para que otros lo vean
+    // 2. Manda por el cable correcto a Internet
     if (window.guardarEnNube) {
-        window.guardarEnNube(rifaDatos);
+        window.guardarEnNube(rifaDatos); 
     }
 }
         
