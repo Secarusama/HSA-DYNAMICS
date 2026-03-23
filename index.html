@@ -20,7 +20,8 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const auth = getAuth(app); 
-    const rifaRef = ref(db, 'rifa_compartida');
+   let rifaRef = null; 
+let usuarioCargado = false;
 
     // --- FUNCIÓN DE LOGIN (Ahora dentro del módulo) ---
     window.intentarLogin = () => {
@@ -44,18 +45,45 @@
 
     // --- OBSERVADOR DE SESIÓN ---
     onAuthStateChanged(auth, (user) => {
-        const pantalla = document.getElementById('pantallaLogin');
-        if (user) {
-            pantalla.classList.add('hidden');
-            // Si la función inicializar existe abajo, la arranca
-            if (typeof window.inicializar === 'function') {
-                window.inicializar();
-            }
-        } else {
-            pantalla.classList.remove('hidden');
-        }
-    });
+    const pantalla = document.getElementById('pantallaLogin');
+    if (user) {
+        pantalla.classList.add('hidden');
+        
+        // Creamos la ruta privada para este usuario específico
+        const userRifaRef = ref(db, 'usuarios/' + user.uid + '/rifa_datos');
+        
+        // Definimos la función de guardar para que use esta ruta
+        window.guardarEnNube = (datos) => set(userRifaRef, datos);
 
+        // ESCUCHAR DATOS: Esto reemplaza la necesidad de llamar a inicializar() manualmente
+        onValue(userRifaRef, (snapshot) => {
+            const data = snapshot.val();
+            
+            if (data) {
+                // Si hay datos, limpiamos y cargamos lo del usuario
+                rifaDatos = data.tickets || {};
+                if (data.ajustes) {
+                    config = data.ajustes;
+                    // Actualizamos los inputs con la config del usuario
+                    document.getElementById('confNombre').value = config.nombre || '';
+                    document.getElementById('confValor').value = config.valor || '';
+                    document.getElementById('confFecha').value = config.fecha || '';
+                    document.getElementById('rangoRifa').value = config.rango || '100';
+                }
+            } else {
+                // Si el usuario es nuevo y no tiene datos, empezamos de cero
+                rifaDatos = {};
+            }
+
+            // Dibujamos la tabla con los datos PRIVADOS del usuario
+            generarTabla();
+            actualizarDashboard();
+        });
+
+    } else {
+        pantalla.classList.remove('hidden');
+    }
+});
     // --- CONEXIONES GLOBALES ---
     window.auth = auth;
     window.signOut = signOut;
@@ -239,44 +267,16 @@
         const tooltip = document.getElementById('tooltipGlobal');
 
         function inicializar() {
-    if (window.escucharNube) {
-        window.escucharNube((data) => {
-            if (data) {
-                rifaDatos = {};
-                // Verificamos si la data trae la estructura nueva o la antigua
-                // Si existe 'tickets' o 'ajustes', es el formato nuevo
-                if (data.tickets || data.ajustes) {
-                    if (data.tickets) rifaDatos = data.tickets;
-                    if (data.ajustes) {
-                        config = data.ajustes;
-                        // Sincronizamos los textos para que cambien en todas las pantallas
-                        document.getElementById('confNombre').value = config.nombre || '';
-                        document.getElementById('confValor').value = config.valor || '';
-                        document.getElementById('confFecha').value = config.fecha || '';
-                        document.getElementById('rangoRifa').value = config.rango || '100';
-                    }
-                } else {
-                    // Si no tiene esas etiquetas, asumimos que toda la 'data' son los tickets
-                    rifaDatos = data;
-                }
-                
-                // IMPORTANTE: Solo generamos tabla si hay datos para mostrar
-                generarTabla();
-                actualizarDashboard();
-            }
-        });
-    }
-
-    // Carga inicial desde los inputs
+    // Solo carga valores visuales iniciales de la variable config local
     document.getElementById('confNombre').value = config.nombre || '';
     document.getElementById('confValor').value = config.valor || '';
     document.getElementById('confFecha').value = config.fecha || '';
     document.getElementById('rangoRifa').value = config.rango || '100';
     
-    generarTabla();
     validarMontoAbono();
+    // No llamamos a generarTabla() aquí para evitar que salga vacía 
+    // antes de que Firebase responda.
 }
-
         // --- PDF AGRUPADO POR CLIENTE ---
         async function exportarPDF() {
     const { jsPDF } = window.jspdf;
@@ -433,51 +433,80 @@
     }
 }
 
-        function generarTabla() {
-            const limite = parseInt(config.rango);
-            const contenedor = document.getElementById('contenedorTabla');
-            contenedor.innerHTML = '';
+       function generarTabla() {
+    // 1. IMPORTANTE: Si config.valor no está definido, el saldo siempre será 0.
+    // Asegúrate de guardar el precio en la pestaña Configuración.
+    const limite = (config && config.rango) ? parseInt(config.rango) : 100;
+    const precioBoleto = (config && config.valor) ? parseFloat(config.valor) : 0;
+    
+    const contenedor = document.getElementById('contenedorTabla');
+    if (!contenedor) return;
+    contenedor.innerHTML = '';
+    
+    for (let i = 0; i < limite; i++) {
+        const padding = limite > 100 ? 3 : 2;
+        const numStr = i.toString().padStart(padding, '0');
+        const info = rifaDatos ? rifaDatos[numStr] : null;
+        const bola = document.createElement('div');
+        
+        let claseEstado = 'libre';
+        let estiloBorde = '';
+
+        if (info) {
+            claseEstado = 'vendido';
             
-            for (let i = 0; i < limite; i++) {
-                const numStr = i.toString().padStart(limite === 1000 ? 3 : 2, '0');
-                const info = rifaDatos[numStr];
-                const bola = document.createElement('div');
-                
-                // LÓGICA DE COLOR DE BORDE DINÁMICO
-                let claseEstado = 'libre';
-                let estiloBorde = '';
-
-                if (info) {
-                    const vt = info.numerosEnVenta.length * (parseFloat(config.valor) || 0);
-                    const ab = info.pago === 'total' ? vt : (info.abonoTotal || 0);
-                    const saldo = vt - ab;
-
-                    claseEstado = 'vendido';
-                    // Si el saldo es 0, borde verde. Si es 1 o más, borde rojo.
-                    estiloBorde = saldo === 0 ? 'border-color: #71ef44 !important;' : 'border-color: #ff4444 !important;';
-                }
-
-                bola.className = `numero-bola ${claseEstado}`;
-                if (estiloBorde) bola.style = estiloBorde; // Aplicamos el color de borde aquí
-
-                if (seleccionados.includes(numStr)) bola.classList.add('seleccionado');
-                
-                bola.dataset.cliente = info ? info.nombre.toLowerCase() : '';
-                bola.innerHTML = `<span class="num-text">${numStr}</span>`;
-
-                if (info) {
-                    bola.innerHTML += `<img src="${URL_DUENDE}" crossorigin="anonymous" style="width:100%; height:100%; object-fit:cover; position:absolute; inset:0; border-radius:50%;">`;
-                    bola.onclick = () => abrirGestionPago(numStr);
-                    bola.onmouseenter = (e) => mostrarTooltip(e, numStr);
-                    bola.onmousemove = (e) => moverTooltip(e);
-                    bola.onmouseleave = () => ocultarTooltip();
-                } else {
-                    bola.onclick = () => manejarSeleccion(numStr, bola);
-                }
-                contenedor.appendChild(bola);
+            // Calculamos cuántos números compró (para saber el total de la deuda)
+            const cantNums = (info.numerosEnVenta && Array.isArray(info.numerosEnVenta)) 
+                             ? info.numerosEnVenta.length 
+                             : 1;
+            
+            const ventaTotal = cantNums * precioBoleto;
+            
+            // LÓGICA DE SALDO
+            let abonoReal = 0;
+            if (info.pago === 'total') {
+                abonoReal = ventaTotal; // Pagó todo
+            } else if (info.pago === 'abono') {
+                abonoReal = parseFloat(info.abonoTotal || 0); // Pagó una parte
+            } else {
+                abonoReal = 0; // BOTÓN "DEBE": No pagó nada, el abono es 0
             }
-            actualizarDashboard();
+
+            const saldoPendiente = ventaTotal - abonoReal;
+
+            // Si el saldo es mayor a 0 (debe algo o debe todo), se pone ROJO
+            if (saldoPendiente > 0) {
+                estiloBorde = 'border: 3px solid #ff4444 !important; box-shadow: 0 0 8px rgba(255, 68, 68, 0.6);';
+            } else {
+                // Si el saldo es 0, se pone VERDE
+                estiloBorde = 'border: 3px solid #71ef44 !important; box-shadow: 0 0 8px rgba(113, 239, 68, 0.4);';
+            }
         }
+
+        bola.className = `numero-bola ${claseEstado}`;
+        if (estiloBorde) bola.style.cssText = estiloBorde;
+
+        if (typeof seleccionados !== 'undefined' && seleccionados.includes(numStr)) {
+            bola.classList.add('seleccionado');
+        }
+        
+        bola.innerHTML = `<span class="num-text">${numStr}</span>`;
+
+        if (info) {
+            bola.innerHTML += `<img src="${URL_DUENDE}" crossorigin="anonymous" style="width:100%; height:100%; object-fit:cover; position:absolute; inset:0; border-radius:50%;">`;
+            bola.onclick = () => typeof abrirGestionPago === 'function' && abrirGestionPago(numStr);
+            
+            bola.onmouseenter = (e) => typeof mostrarTooltip === 'function' && mostrarTooltip(e, numStr);
+            bola.onmouseleave = () => typeof ocultarTooltip === 'function' && ocultarTooltip();
+        } else {
+            bola.onclick = () => typeof manejarSeleccion === 'function' && manejarSeleccion(numStr, bola);
+        }
+        
+        contenedor.appendChild(bola);
+    }
+    
+    if (typeof actualizarDashboard === 'function') actualizarDashboard();
+}
         async function compartirDisponibles() {
     const btn = document.getElementById('btnCompartir');
     const textoOriginal = btn.innerText;
