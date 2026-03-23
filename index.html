@@ -4,9 +4,10 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSy...", // Tu clave real
+      apiKey: "AIzaSyAkVcBAv6C52caEDa4z4u8dztSwJ_i7IQM", 
       authDomain: "rifasweb-6d2ab.firebaseapp.com",
       databaseURL: "https://rifasweb-6d2ab-default-rtdb.firebaseio.com",
       projectId: "rifasweb-6d2ab",
@@ -15,14 +16,52 @@
       appId: "1:305244519965:web:8e3d2319f688e154432104"
     };
 
+    // Inicialización
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    const auth = getAuth(app); 
     const rifaRef = ref(db, 'rifa_compartida');
 
-    // ESTOS NOMBRES SON LOS QUE TU LÓGICA BUSCA ABAJO
+    // --- FUNCIÓN DE LOGIN (Ahora dentro del módulo) ---
+    window.intentarLogin = () => {
+        const email = document.getElementById('loginEmail').value;
+        const pass = document.getElementById('loginPass').value;
+        const errorMsg = document.getElementById('errorLogin');
+
+        console.log("Intentando ingresar con:", email);
+
+        signInWithEmailAndPassword(auth, email, pass)
+            .then((userCredential) => {
+                console.log("Acceso correcto:", userCredential.user.email);
+                document.getElementById('pantallaLogin').classList.add('hidden');
+            })
+            .catch((error) => {
+                console.error("Error de Firebase:", error.code);
+                errorMsg.classList.remove('hidden');
+                errorMsg.innerText = "❌ CORREO O CONTRASEÑA INCORRECTOS";
+            });
+    };
+
+    // --- OBSERVADOR DE SESIÓN ---
+    onAuthStateChanged(auth, (user) => {
+        const pantalla = document.getElementById('pantallaLogin');
+        if (user) {
+            pantalla.classList.add('hidden');
+            // Si la función inicializar existe abajo, la arranca
+            if (typeof window.inicializar === 'function') {
+                window.inicializar();
+            }
+        } else {
+            pantalla.classList.remove('hidden');
+        }
+    });
+
+    // --- CONEXIONES GLOBALES ---
+    window.auth = auth;
+    window.signOut = signOut;
     window.guardarEnNube = (datos) => set(rifaRef, datos);
-window.escucharNube = (callback) => onValue(rifaRef, (snap) => callback(snap.val()));
-  </script>
+    window.escucharNube = (callback) => onValue(rifaRef, (snap) => callback(snap.val()));
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HSA Dynamics - Gestión de Rifas</title>
@@ -51,6 +90,27 @@ window.escucharNube = (callback) => onValue(rifaRef, (snap) => callback(snap.val
     </style>
 </head>
 <body class="p-2 pb-32">
+  <div id="pantallaLogin" class="fixed inset-0 bg-black z-[20000] flex items-center justify-center p-4">
+    <div class="bg-[#0a0a0a] p-8 rounded-3xl border border-emerald-500/30 w-full max-w-sm shadow-2xl text-center">
+        <img src="https://i.ibb.co/HL9PDYfW/duende.jpg" class="w-24 h-24 mx-auto rounded-2xl mb-4 border border-emerald-500">
+        <h2 class="text-xl font-black text-white mb-6">HSA DYNAMICS</h2>
+        
+        <input type="email" id="loginEmail" placeholder="Correo electrónico" 
+               class="w-full p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-white mb-3 text-sm outline-none focus:border-emerald-500">
+        
+        <input type="password" id="loginPass" placeholder="Contraseña" 
+               class="w-full p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-white mb-6 text-sm outline-none focus:border-emerald-500">
+        
+        <button type="button" onclick="window.intentarLogin()" 
+                class="w-full bg-emerald-600 py-3 rounded-xl font-black text-white uppercase text-xs hover:bg-emerald-500 transition-colors">
+            Ingresar al Sistema
+        </button>
+        
+        <p id="errorLogin" class="text-rose-500 text-[10px] mt-4 hidden font-bold uppercase tracking-widest">
+            ❌ Acceso denegado. Revisa tus datos.
+        </p>
+    </div>
+</div>
     <div id="tooltipGlobal"></div>
     
     <div class="max-w-[1200px] mx-auto">
@@ -170,7 +230,7 @@ window.escucharNube = (callback) => onValue(rifaRef, (snap) => callback(snap.val
     </div>
 </div>
 
-    <script>
+     <script>
         const URL_DUENDE = "https://images.weserv.nl/?url=i.ibb.co/HL9PDYfW/duende.jpg";
         let rifaDatos = JSON.parse(localStorage.getItem('rifa_onyx_v21')) || {};
         let config = JSON.parse(localStorage.getItem('rifa_conf_v21')) || {nombre:'', valor:'', fecha:'', rango: '100'};
@@ -917,7 +977,6 @@ function validarMontoAbono() {
     // Para que empiece deshabilitado (ya que el monto es 0)
     validarMontoAbono();
 }
-      window.onload = inicializar;
     </script>
 </body>
 </html>
