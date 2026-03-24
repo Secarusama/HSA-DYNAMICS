@@ -89,6 +89,19 @@ let usuarioCargado = false;
     window.signOut = signOut;
     window.guardarEnNube = (datos) => set(rifaRef, datos);
     window.escucharNube = (callback) => onValue(rifaRef, (snap) => callback(snap.val()));
+     window.cerrarSesion = () => {
+        if (confirm("¿Estás seguro de que quieres salir?")) {
+            signOut(auth).then(() => {
+                // Limpiamos rastro de la cuenta anterior
+                localStorage.removeItem('rifa_onyx_v21');
+                localStorage.removeItem('rifa_conf_v21');
+                // Recargamos para que el observador de Firebase muestre el Login
+                window.location.reload();
+            }).catch((error) => {
+                alert("Error al salir: " + error.message);
+            });
+        }
+    };
 </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -157,6 +170,7 @@ let usuarioCargado = false;
                     <button id="btnCompartir" onclick="compartirDisponibles()" class="p-2 bg-emerald-900/20 text-emerald-500 rounded-lg border border-emerald-800/30 text-[10px] font-bold uppercase">🟢 Libres</button>
                     <button onclick="enviarPendientesWhatsApp()" class="p-2 bg-rose-900/20 text-rose-500 rounded-lg border border-rose-800/30 text-[8px] font-bold uppercase">🔴 Deudores</button>
                     <button onclick="exportarPDF()" class="p-2 bg-zinc-800 text-zinc-300 rounded-lg border border-zinc-700 text-[8px] font-bold uppercase">📄 PDF</button>
+                  <button onclick="cerrarSesion()" class="p-2 bg-red-900/40 text-red-400 rounded-lg border border-red-800/50 text-[8px] font-black uppercase">🚪 Salir</button>
                     <button onclick="resetearSistema()" class="p-2 bg-zinc-900 text-zinc-600 rounded-lg border border-zinc-800 text-[8px] font-bold uppercase">🗑️ Reset</button>
                 </div>
             </div>
