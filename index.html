@@ -118,7 +118,7 @@ let usuarioCargado = false;
         
         #contenedorTabla { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 5px; padding: 12px; background-color: #0a0a0a; border-radius: 15px; border: 1px solid #1a1a1a; width: 100%; }
         
-        .numero-bola { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: all 0.2s ease; font-size: 1.7rem; font-weight: 900; user-select: none; border: 2px solid #1a1a1a; color: #ffffff; position: relative; overflow: hidden; text-align: center; }
+        .numero-bola { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: all 0.2s ease; font-size: 1.1rem; font-weight: 900; user-select: none; border: 2px solid #1a1a1a; color: #ffffff; position: relative; overflow: hidden; text-align: center; }
         .libre { background: linear-gradient(145deg, #064e3b, #022c22); border-color: #059669; } 
         .seleccionado { background: #3b82f6 !important; border-color: #ffffff; transform: scale(1.1); z-index: 10; box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
         .vendido { border-color: #71ef44; color: transparent !important; }
@@ -595,7 +595,7 @@ let usuarioCargado = false;
                 left: 50%;
                 transform: translate(-50%, -50%);
                 z-index: 10;
-                font-size: 60px;
+                font-size: 50px;
                 font-weight: 900;
                 line-height: 1;
                 text-align: center;
@@ -1019,6 +1019,27 @@ function validarMontoAbono() {
     // 4. Forzamos la validación del botón de Abono 
     // Para que empiece deshabilitado (ya que el monto es 0)
     validarMontoAbono();
+}
+       function cambiarRango() {
+    // 1. Capturamos el nuevo valor del selector
+    const nuevoRango = document.getElementById('rangoRifa').value;
+    
+    // 2. Actualizamos el objeto de configuración global
+    config.rango = nuevoRango;
+    
+    // 3. Volvemos a generar la tabla (esto usará el nuevo límite)
+    generarTabla();
+    
+    // 4. Actualizamos las estadísticas
+    actualizarDashboard();
+    
+    // 5. IMPORTANTE: Guardamos el cambio en Firebase para que no se pierda
+    if (window.guardarEnNube) {
+        window.guardarEnNube({
+            tickets: rifaDatos,
+            ajustes: config
+        });
+    }
 }
     </script>
 </body>
